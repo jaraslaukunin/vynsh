@@ -1,10 +1,13 @@
 # vynsh
 
-[![release](https://img.shields.io/github/v/release/jaraslaukunin/vynsh?include_prereleases&label=release&color=7c3aed)](https://github.com/jaraslaukunin/vynsh/releases)
-[![license](https://img.shields.io/badge/license-MIT-7c3aed)](LICENSE)
-[![platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-7c3aed)](#установка)
-[![go](https://img.shields.io/github/go-mod/go-version/jaraslaukunin/vynsh?color=7c3aed)](go.mod)
-[![ci](https://github.com/jaraslaukunin/vynsh/actions/workflows/ci.yml/badge.svg)](https://github.com/jaraslaukunin/vynsh/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/jaraslaukunin/vynsh?include_prereleases&style=flat-square&label=release&color=7c3aed&labelColor=1b1230)](https://github.com/jaraslaukunin/vynsh/releases)
+[![ci](https://img.shields.io/github/actions/workflow/status/jaraslaukunin/vynsh/ci.yml?branch=main&style=flat-square&label=ci&color=7c3aed&labelColor=1b1230)](https://github.com/jaraslaukunin/vynsh/actions/workflows/ci.yml)
+[![go](https://img.shields.io/github/go-mod/go-version/jaraslaukunin/vynsh?style=flat-square&logo=go&logoColor=white&color=7c3aed&labelColor=1b1230)](go.mod)
+[![license](https://img.shields.io/github/license/jaraslaukunin/vynsh?style=flat-square&color=7c3aed&labelColor=1b1230)](LICENSE)
+[![platforms](https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-7c3aed?style=flat-square&labelColor=1b1230)](#установка)
+
+[![downloads](https://img.shields.io/github/downloads/jaraslaukunin/vynsh/total?style=flat-square&label=downloads&color=7c3aed&labelColor=1b1230&logo=github&logoColor=white)](https://github.com/jaraslaukunin/vynsh/releases)
+[![stars](https://img.shields.io/github/stars/jaraslaukunin/vynsh?style=flat-square&label=stars&color=7c3aed&labelColor=1b1230&logo=github&logoColor=white)](https://github.com/jaraslaukunin/vynsh/stargazers)
 
 Консольная утилита для очистки и анализа системы. Показывает, что занимает диск и
 что нагружает компьютер, и убирает мусор — но только после того, как вы увидели

@@ -91,7 +91,7 @@ func TestDiscoverAndApply(t *testing.T) {
 
 	rules := []Rule{{
 		ID: "test-rule", Name: "Test rule", Category: "dev", Risk: RiskLow,
-		Paths: []string{filepath.Join(home, "Library", "Caches", "*")},
+		Paths: []string{filepath.Join(cacheDir, "*")},
 	}}
 	targets := Discover(rules, DiscoverOptions{})
 	if len(targets) != 1 {
