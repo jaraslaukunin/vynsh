@@ -26,6 +26,8 @@ import (
 type Options struct {
 	Refresh time.Duration
 	NoColor bool
+	// Version is shown in the header, e.g. "0.3 beta".
+	Version string
 }
 
 type tabIndex int
@@ -92,11 +94,12 @@ type model struct {
 	dupes        dupeState
 	dupeProgress string
 
-	tab    tabIndex
-	width  int
-	height int
-	frame  int
-	busy   string
+	tab     tabIndex
+	width   int
+	height  int
+	frame   int
+	busy    string
+	version string
 
 	prompt        *promptState
 	beetleX       int
@@ -174,6 +177,7 @@ func newModel(opts Options) *model {
 			Interval: 250 * time.Millisecond, TopN: 6, SortBy: "cpu", IncludeProcs: true,
 		}),
 		refresh:  opts.Refresh,
+		version:  opts.Version,
 		width:    100,
 		height:   32,
 		selected: map[string]bool{},
@@ -423,9 +427,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tickMsg:
 		m.frame++
-		b := m.beetle()
-		b.walkStep(m.beetleMaxX())
-		m.beetleX, m.beetleDir, m.beetleWalking = b.x, b.dir, b.walking
 		return m, m.tick()
 
 	case snapMsg:
@@ -686,7 +687,11 @@ func (m *model) View() string {
 }
 
 func (m *model) headerView(width int) string {
-	left := titleStyle.Render("✻ vynsh") + labelStyle.Render("  disk cleanup & system monitor")
+	subtitle := "  disk cleanup & system monitor"
+	if m.version != "" {
+		subtitle = " " + m.version + "  disk cleanup & system monitor"
+	}
+	left := titleStyle.Render("✻ vynsh") + labelStyle.Render(subtitle)
 	right := ""
 	if m.snap != nil {
 		right = labelStyle.Render(m.snap.Hostname + " · " + m.snap.Time.Format("15:04:05"))
@@ -711,7 +716,7 @@ func (m *model) tabsView() string {
 	return strings.Join(parts, " ")
 }
 
-// bodyView renders the active view next to the mascot panel when there is room.
+// bodyView renders the active view at full width.
 func (m *model) bodyView(width int) string {
 	var content string
 	switch m.tab {
@@ -725,13 +730,6 @@ func (m *model) bodyView(width int) string {
 		content = m.dupesView()
 	case tabTrash:
 		content = m.trashView()
-	}
-	if width >= 88 {
-		panelWidth := 32
-		panel := panelStyle.Width(panelWidth - 2).Render(
-			mascotPanel(m.beetle(), m.speech(), panelWidth-4))
-		left := lipgloss.NewStyle().Width(m.contentWidth()).Render(content)
-		return lipgloss.JoinHorizontal(lipgloss.Top, left, " ", panel)
 	}
 	return content
 }
@@ -795,7 +793,7 @@ func (m *model) footerView(width int) string {
 	if status != "" {
 		body = status + "\n" + body
 	}
-	return boxStyle.Width(width - 4).Render(body)
+	return m.withBeetle(boxStyle.Width(width-4).Render(body), width)
 }
 
 func (m *model) statusLine() string {
@@ -855,30 +853,9 @@ func shorten(p string) string {
 	return p
 }
 
-// beetle derives the mascot's state from the model.
-func (m *model) beetle() beetleState {
-	return beetleState{
-		frame:   m.frame,
-		busy:    m.isBusy(),
-		happy:   m.frame < m.happyUntil,
-		walking: m.beetleWalking,
-		x:       m.beetleX,
-		dir:     m.beetleDir,
-	}
-}
-
 // celebrate makes the beetle smile for a couple of seconds.
 func (m *model) celebrate() {
 	m.happyUntil = m.frame + 14
-}
-
-// beetleMaxX is how far the beetle can walk inside the mascot panel.
-func (m *model) beetleMaxX() int {
-	inner := 32 - 4 // panel width minus borders and padding
-	if inner < spriteW {
-		return 0
-	}
-	return inner - spriteW
 }
 
 // clampLine cuts a rendered line down to w visible cells, keeping ANSI codes.

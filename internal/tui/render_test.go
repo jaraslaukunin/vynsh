@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/jaraslaukunin/vynsh/internal/clean"
+	"github.com/jaraslaukunin/vynsh/internal/logo"
 	"github.com/jaraslaukunin/vynsh/internal/scan"
 	"github.com/jaraslaukunin/vynsh/internal/sysinfo"
 	"github.com/jaraslaukunin/vynsh/internal/trash"
@@ -57,7 +58,7 @@ func TestRenderAllViews(t *testing.T) {
 	checks := map[tabIndex][]string{
 		tabOverview: {"CPU", "Memory", "Disks", "Network", "Top processes", "WindowServer", "vynsh"},
 		tabCleanup:  {"Cleanup", "All user app caches", "Gradle caches", "selected"},
-		tabDisk:     {"No scan yet", "press", "analyse"},
+		tabDisk:     {"No scan yet", "Press", "analyse"},
 		tabDupes:    {"Duplicates", "Find files with identical content"},
 		tabTrash:    {"Trash", "Restorable by vynsh", "old.dmg"},
 	}
@@ -162,14 +163,47 @@ func TestDiskViewWithScan(t *testing.T) {
 }
 
 func TestMascotFrames(t *testing.T) {
-	if err := checkSprites(); err != nil {
+	if err := logo.Check(); err != nil {
 		t.Fatal(err)
 	}
-	for i := 0; i < 80; i++ {
-		out := mascotPanel(beetleState{frame: i, busy: i%2 == 0, x: i % 10}, "measuring caches…", 26)
+	for i := 0; i < 90; i++ {
+		m := sampleModel()
+		m.frame = i
+		m.height = 34
+		out := m.withBeetle("BOX", 110)
 		if !strings.Contains(out, "▀") && !strings.Contains(out, "▄") {
-			t.Errorf("frame %d has no pixels:\n%s", i, out)
+			t.Errorf("frame %d has no beetle pixels:\n%s", i, out)
 		}
+		if !strings.Contains(out, "BOX") {
+			t.Errorf("frame %d lost the input box", i)
+		}
+	}
+}
+
+func TestBeetleHops(t *testing.T) {
+	// While hopping the beetle lifts off: its art gains an empty first row and
+	// drops the feet, so the figure sits one row higher.
+	var lifted, grounded int
+	for i := 0; i < 30; i++ {
+		m := sampleModel()
+		m.frame = i
+		m.height = 34
+		out := m.withBeetle("BOX", 110)
+		first := strings.Split(out, "\n")[0]
+		if strings.TrimSpace(first) == "" {
+			lifted++
+		} else {
+			grounded++
+		}
+	}
+	if lifted == 0 || grounded == 0 {
+		t.Errorf("beetle never changed pose: lifted=%d grounded=%d", lifted, grounded)
+	}
+	if !(beetleState{frame: 8}).hopping() {
+		t.Error("frame 8 should be airborne")
+	}
+	if (beetleState{frame: 20}).hopping() {
+		t.Error("frame 20 should be on the ground")
 	}
 }
 

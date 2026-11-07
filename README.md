@@ -8,6 +8,23 @@
 Linux поддерживается тем же кодом (правила очистки, корзина freedesktop
 `~/.local/share/Trash`, сканер, снимки, TUI) — собранные бинарники в `dist/`.
 
+**Текущая версия: 0.3 beta.** Go для установки не нужен — есть готовые сборки
+и установка одной строкой:
+
+```sh
+# macOS и Linux
+curl -fsSL https://raw.githubusercontent.com/jaraslaukunin/vynsh/main/install.sh | sh
+```
+
+```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/jaraslaukunin/vynsh/main/install.ps1 | iex
+```
+
+Установщик сам определит систему и процессор (macOS/Linux/Windows, Intel/Apple
+silicon/ARM), скачает архив, **проверит SHA-256**, положит бинарник в `PATH` и
+покажет версию. Подробности и ручная установка — в разделе [Установка](#установка).
+
 ```
 $ vynsh report
 vynsh report 2026-11-07 20:47
@@ -59,49 +76,105 @@ What to do next
 
 ## Установка
 
+### Одной строкой (рекомендуется)
+
+```sh
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/jaraslaukunin/vynsh/main/install.sh | sh
+```
+
+```powershell
+# Windows
+irm https://raw.githubusercontent.com/jaraslaukunin/vynsh/main/install.ps1 | iex
+```
+
+Что делает установщик:
+
+* определяет ОС и архитектуру (macOS, Linux, Windows × amd64, arm64);
+* скачивает нужный архив из [Releases](https://github.com/jaraslaukunin/vynsh/releases);
+* проверяет SHA-256 по файлу `SHA256SUMS`;
+* ставит бинарник в `/usr/local/bin` (или `~/.local/bin`, если первый недоступен),
+  на Windows — в `%LOCALAPPDATA%\Programs\vynsh` и добавляет папку в `PATH`;
+* печатает установленную версию и подсказку про `PATH`, если нужно.
+
+Полезные переменные окружения:
+
+| Переменная | Зачем |
+|---|---|
+| `VYNSH_VERSION=0.3.0-beta` | поставить конкретную версию вместо последней |
+| `VYNSH_INSTALL_DIR=~/.local/bin` | куда положить бинарник |
+| `VYNSH_BASE_URL=...` | свой зеркало/локальная папка вместо GitHub |
+| `VYNSH_NO_VERIFY=1` | пропустить проверку контрольной суммы (не рекомендуется) |
+
+В PowerShell те же параметры: `-Version`, `-InstallDir` и `-NoVerify`.
+
+### Проверить перед запуском
+
+Архивы и контрольные суммы лежат в разделе Releases. Проверка вручную:
+
+```sh
+shasum -a 256 -c SHA256SUMS           # macOS
+sha256sum -c SHA256SUMS               # Linux
+```
+
+Установщик использует `curl`/`wget` и `sh` — ничего больше не требует.
+
+### Вручную (без установщика)
+
+1. Скачайте архив `vynsh_<версия>_<os>_<arch>.tar.gz` (или `.zip` для Windows).
+2. Распакуйте и положите `vynsh` туда, где лежат другие программы:
+
+```sh
+tar -xzf vynsh_0.3.0-beta_darwin_arm64.tar.gz
+sudo mv vynsh /usr/local/bin/
+vynsh version
+```
+
+Windows: распакуйте `.zip` и перетащите `vynsh.exe` в папку, которая есть в `PATH`
+(например `%LOCALAPPDATA%\Programs\vynsh`), либо запускайте прямо из папки загрузок.
+
+### Homebrew (в планах)
+
+Как только появится tap, установка будет такой:
+
+```sh
+brew install jaraslaukunin/tap/vynsh
+```
+
+### Из исходников (для разработки)
+
 ```bash
-# из исходников
-git clone <repo> && cd vynsh
+git clone https://github.com/jaraslaukunin/vynsh
+cd vynsh
 make build            # → ./bin/vynsh
-make install          # → $GOBIN/vynsh
-
-# или напрямую
-go install github.com/jaraslaukunin/vynsh/cmd/vynsh@latest
-```
-
-Кросс-сборка (macOS + Windows + Linux, amd64 + arm64):
-
-```bash
-make release          # → dist/vynsh-<os>-<arch>[.exe]
-```
-
-### Как запустить
-
-```bash
-# 1. самый быстрый способ — без установки
+make install          # → $GOBIN
 go run ./cmd/vynsh report
-
-# 2. собрать и запускать бинарник из репозитория
-make build
-./bin/vynsh report
-
-# 3. поставить в PATH (нужен $GOBIN = ~/go/bin в $PATH)
-make install
-vynsh report
-
-# 4. готовые бинарники из make release
-./dist/vynsh-darwin-arm64 report          # macOS Apple silicon
-./dist/vynsh-windows-amd64.exe report     # Windows
 ```
 
-Если не хочется трогать PATH, положите бинарник в `/usr/local/bin`:
+### Обновление и удаление
+
+```sh
+# обновиться до последней версии
+curl -fsSL https://raw.githubusercontent.com/jaraslaukunin/vynsh/main/install.sh | sh
+
+# удалить
+rm /usr/local/bin/vynsh                       # macOS / Linux
+rm ~/.local/bin/vynsh
+# Windows
+Remove-Item "$env:LOCALAPPDATA\Programs\vynsh" -Recurse
+```
+
+Данные vynsh (конфиг, аудит-лог, снимки) лежат отдельно и удаляются вручную:
+macOS — `~/Library/Application Support/vynsh`, Windows — `%AppData%\vynsh`,
+Linux — `~/.config/vynsh`.
+
+### Сборка релиза (для мейнтейнера)
 
 ```bash
-sudo cp bin/vynsh /usr/local/bin/
+make release VERSION=0.3.0-beta   # бинарники + .tar.gz/.zip + SHA256SUMS в dist/
+git tag v0.3.0-beta && git push --tags
+goreleaser release --clean        # то же самое + GitHub Release и changelog
 ```
-
-Проверить, что всё на месте: `vynsh version`, `vynsh doctor`-а нет, но `vynsh report --skip-scan`
-показывает диск, память и что можно освободить, не обходя весь домашний каталог.
 
 ## Быстрый старт
 
@@ -356,6 +429,36 @@ Cleanup                                    8.96 GB selected · 2 rules    ╭─
 }
 ```
 
+## Логотип и брендинг
+
+Маскот — пиксельный жук, 9×6 «пикселей», один и тот же спрайт используется и в
+терминале, и в логотипе:
+
+```
+L.......L
+.L.....L.
+.SSSSSSS.
+.SEESEES.
+.SHHHHHH.
+..L.L.L..
+```
+
+Он сидит на верхней рамке поля ввода в TUI и иногда подпрыгивает (в прыжке
+поджимает лапки), а после успешной очистки прыгает дважды.
+
+Экспорт в PNG для айдентики:
+
+```bash
+vynsh logo                                  # vynsh-logo-1024.png, прозрачный фон
+vynsh logo --size 512 --bg "#0d0b1a"        # с тёмным фоном
+vynsh logo --variant hop --out hop.png      # другая поза: base, hop, blink
+vynsh logo --ascii                          # посмотреть спрайт в терминале
+```
+
+Готовые файлы лежат в [`assets/`](assets/): `logo-1024.png` (прозрачный),
+`logo-1024-dark.png` (тёмный фон), `logo-512.png`. Масштабирование целочисленное,
+поэтому пиксели остаются резкими на любом размере.
+
 ## Архитектура
 
 ```
@@ -400,6 +503,7 @@ make release     # кросс-сборка darwin/windows/linux × amd64/arm64
 * Интерактивное удаление дубликатов в TUI (галочки прямо по группам).
 * JSON-schema для конфигурации и собственные правила пользователя.
 * HTML-отчёт для «показать коллеге».
+* Homebrew tap и winget-манифест для установки без скриптов.
 
 ## Лицензия
 

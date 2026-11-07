@@ -1,0 +1,85 @@
+# GoReleaser configuration for vynsh.
+#
+# Publishing a release is then a single command:
+#
+#   git tag v0.3.0-beta && git push --tags && goreleaser release --clean
+#
+# It builds the same asset names that install.sh and install.ps1 expect:
+#   vynsh_<version>_<os>_<arch>.tar.gz | .zip  plus  SHA256SUMS
+version: 2
+
+project_name: vynsh
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: vynsh
+    main: ./cmd/vynsh
+    binary: vynsh
+    env:
+      - CGO_ENABLED=0
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/jaraslaukunin/vynsh/internal/cli.Version={{ .Version }}
+      - -X github.com/jaraslaukunin/vynsh/internal/cli.Commit={{ .Commit }}
+      - -X github.com/jaraslaukunin/vynsh/internal/cli.Date={{ .Date }}
+
+archives:
+  - id: vynsh
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: SHA256SUMS
+  algorithm: sha256
+
+release:
+  draft: true
+  prerelease: auto
+  name_template: "vynsh {{ .Version }}"
+  header: |
+    ## vynsh {{ .Version }}
+
+    Install with one line:
+
+    ```sh
+    curl -fsSL https://raw.githubusercontent.com/jaraslaukunin/vynsh/main/install.sh | sh
+    ```
+
+    ```powershell
+    irm https://raw.githubusercontent.com/jaraslaukunin/vynsh/main/install.ps1 | iex
+    ```
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^chore:"
+      - "^test:"
+
+# Uncomment to publish a Homebrew tap automatically:
+# brews:
+#   - repository:
+#       owner: jaraslaukunin
+#       name: homebrew-tap
+#     directory: Formula
+#     homepage: https://github.com/jaraslaukunin/vynsh
+#     description: "Clean up your disk, trash and processes — macOS, Windows, Linux"
+#     license: MIT
+#     install: |
+#       bin.install "vynsh"

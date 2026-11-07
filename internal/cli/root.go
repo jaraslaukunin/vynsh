@@ -14,7 +14,7 @@ import (
 
 // Build metadata, injected with -ldflags at release time.
 var (
-	Version = "0.1.0-dev"
+	Version = "0.3.0-beta"
 	Commit  = "none"
 	Date    = "unknown"
 )
@@ -98,7 +98,7 @@ Typical first run:
 		root.AddCommand(c)
 	}
 	for _, c := range []*cobra.Command{
-		newTUICmd(), newAuditCmd(), newConfigCmd(), newVersionCmd(),
+		newTUICmd(), newAuditCmd(), newConfigCmd(), newLogoCommand(), newVersionCmd(),
 	} {
 		c.GroupID = "tools"
 		root.AddCommand(c)

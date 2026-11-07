@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -37,9 +38,24 @@ Keys
 			if g.json {
 				return fmt.Errorf("--json is not supported by the interactive dashboard; use `vynsh usage --json`")
 			}
-			return tui.Run(tui.Options{Refresh: refresh})
+			return tui.Run(tui.Options{Refresh: refresh, Version: shortVersion()})
 		},
 	}
 	cmd.Flags().DurationVar(&refresh, "refresh", 2*time.Second, "how often to refresh the snapshot")
 	return cmd
+}
+
+// shortVersion turns "0.3.0-beta" into "0.3 beta" for the dashboard header.
+func shortVersion() string {
+	v := strings.TrimSuffix(Version, "-dev")
+	parts := strings.SplitN(v, "-", 2)
+	base := parts[0]
+	nums := strings.Split(base, ".")
+	if len(nums) >= 2 {
+		base = nums[0] + "." + nums[1]
+	}
+	if len(parts) == 2 && parts[1] != "" {
+		return base + " " + parts[1]
+	}
+	return base
 }

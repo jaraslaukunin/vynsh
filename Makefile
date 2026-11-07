@@ -1,6 +1,6 @@
 MODULE  := github.com/jaraslaukunin/vynsh
 BINARY  := vynsh
-VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo 0.1.0-dev)
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo 0.3.0-beta)
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
@@ -11,7 +11,7 @@ LDFLAGS := -s -w \
 
 PLATFORMS := darwin-amd64 darwin-arm64 windows-amd64 windows-arm64 linux-amd64 linux-arm64
 
-.PHONY: all build test race vet fmt check install clean release $(PLATFORMS)
+.PHONY: all build test race vet fmt check install clean release package checksums install-script-check $(PLATFORMS)
 
 all: build
 
@@ -45,8 +45,21 @@ fmt:
 check: vet test
 	@test -z "$$(gofmt -l .)" || (echo "gofmt found unformatted files:"; gofmt -l .; exit 1)
 
-## release: cross-compile every supported platform into ./dist
-release: $(PLATFORMS)
+## release: cross-compile every platform and build the installer archives
+release: $(PLATFORMS) package checksums
+
+## package: wrap the built binaries into .tar.gz / .zip archives
+package:
+	@VERSION=$(VERSION) scripts/package.sh
+
+## checksums: write dist/SHA256SUMS (done by package too)
+checksums:
+	@cd dist && (sha256sum vynsh_* > SHA256SUMS 2>/dev/null || shasum -a 256 vynsh_* > SHA256SUMS)
+	@echo "wrote dist/SHA256SUMS"
+
+## install-script-check: syntax-check the installers
+install-script-check:
+	@sh -n install.sh && echo "install.sh: syntax ok"
 
 $(PLATFORMS):
 	@mkdir -p dist
