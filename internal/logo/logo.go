@@ -48,21 +48,22 @@ var Palette = map[byte]RGBA{
 	'L': {0x4C, 0x1D, 0x95, 0xFF}, // antennae and legs: violet-900
 }
 
-// The beetle. The art is the reference: two antennae, a wide body, two eyes,
-// a darker band along the bottom of the shell and three legs.
+// The beetle. The body tapers at the top and at the bottom, so the silhouette
+// reads as a rounded shell instead of a striped rectangle, while the eyes,
+// antennae and legs stay in the same places.
 //
 //	L.......L     antenna tips
 //	.L.....L.     antennae
-//	.SSSSSSS.     body
+//	..SSSSS..     top of the shell
 //	.SEESEES.     eyes
-//	.SHHHHHH.     shell shade
+//	..HHHHH..     shell shade
 //	..L.L.L..     legs
 var Base = Sprite{
 	"L.......L",
 	".L.....L.",
-	".SSSSSSS.",
+	"..SSSSS..",
 	".SEESEES.",
-	".SHHHHHH.",
+	"..HHHHH..",
 	"..L.L.L..",
 }
 
@@ -70,9 +71,9 @@ var Base = Sprite{
 var Blink = Sprite{
 	"L.......L",
 	".L.....L.",
+	"..SSSSS..",
 	".SSSSSSS.",
-	".SSSSSSS.",
-	".SHHHHHH.",
+	"..HHHHH..",
 	"..L.L.L..",
 }
 
@@ -80,19 +81,9 @@ var Blink = Sprite{
 var Wink = Sprite{
 	"L.......L",
 	".L.....L.",
-	".SSSSSSS.",
+	"..SSSSS..",
 	".SEESSSS.",
-	".SHHHHHH.",
-	"..L.L.L..",
-}
-
-// Happy squints: the eyes shrink to the lower half of their row.
-var Happy = Sprite{
-	"L.......L",
-	".L.....L.",
-	".SSSSSSS.",
-	".SSESEES.",
-	".SHHHHHH.",
+	"..HHHHH..",
 	"..L.L.L..",
 }
 
@@ -100,18 +91,18 @@ var Happy = Sprite{
 var AntennaeUp = Sprite{
 	"L.......L",
 	"..L...L..",
-	".SSSSSSS.",
+	"..SSSSS..",
 	".SEESEES.",
-	".SHHHHHH.",
+	"..HHHHH..",
 	"..L.L.L..",
 }
 
 var AntennaeDown = Sprite{
 	".L.....L.",
 	"L.......L",
-	".SSSSSSS.",
+	"..SSSSS..",
 	".SEESEES.",
-	".SHHHHHH.",
+	"..HHHHH..",
 	"..L.L.L..",
 }
 
@@ -119,9 +110,9 @@ var AntennaeDown = Sprite{
 var Hop = Sprite{
 	"L.......L",
 	".L.....L.",
-	".SSSSSSS.",
+	"..SSSSS..",
 	".SEESEES.",
-	".SHHHHHH.",
+	"..HHHHH..",
 	"..L...L..",
 }
 
@@ -129,18 +120,18 @@ var Hop = Sprite{
 var Type1 = Sprite{
 	"L.......L",
 	".L.....L.",
-	".SSSSSSS.",
+	"..SSSSS..",
 	".SEESEES.",
-	".SHHHHHH.",
+	"..HHHHH..",
 	".L.L.L.L.",
 }
 
 var Type2 = Sprite{
 	"L.......L",
 	".L.....L.",
-	".SSSSSSS.",
+	"..SSSSS..",
 	".SEESEES.",
-	".SHHHHHH.",
+	"..HHHHH..",
 	"..L...L..",
 }
 
@@ -150,7 +141,6 @@ func All() map[string]Sprite {
 		"base":      Base,
 		"blink":     Blink,
 		"wink":      Wink,
-		"happy":     Happy,
 		"antennae":  AntennaeUp,
 		"hop":       Hop,
 		"type1":     Type1,
