@@ -58,6 +58,7 @@ func TestRenderAllViews(t *testing.T) {
 		tabOverview: {"CPU", "Memory", "Disks", "Network", "Top processes", "WindowServer", "vynsh"},
 		tabCleanup:  {"Cleanup", "All user app caches", "Gradle caches", "selected"},
 		tabDisk:     {"No scan yet", "press", "analyse"},
+		tabDupes:    {"Duplicates", "Find files with identical content"},
 		tabTrash:    {"Trash", "Restorable by vynsh", "old.dmg"},
 	}
 	for tab, wants := range checks {
@@ -133,6 +134,14 @@ func TestTabSwitching(t *testing.T) {
 	if m.tab != tabDisk {
 		t.Fatalf("tab = %v, want disk", m.tab)
 	}
+	m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("4")})
+	if m.tab != tabDupes {
+		t.Fatalf("key 4 should open duplicates, got %v", m.tab)
+	}
+	m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("5")})
+	if m.tab != tabTrash {
+		t.Fatalf("key 5 should open the trash, got %v", m.tab)
+	}
 }
 
 func TestDiskViewWithScan(t *testing.T) {
@@ -153,10 +162,13 @@ func TestDiskViewWithScan(t *testing.T) {
 }
 
 func TestMascotFrames(t *testing.T) {
-	for i := 0; i < len(mascotFrames)+2; i++ {
-		out := mascotPanel(i, "measuring caches…", true, 26)
-		if !strings.Contains(out, "╭") || (!strings.Contains(out, "▓") && !strings.Contains(out, "▀")) {
-			t.Errorf("frame %d looks broken:\n%s", i, out)
+	if err := checkSprites(); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 80; i++ {
+		out := mascotPanel(beetleState{frame: i, busy: i%2 == 0, x: i % 10}, "measuring caches…", 26)
+		if !strings.Contains(out, "▀") && !strings.Contains(out, "▄") {
+			t.Errorf("frame %d has no pixels:\n%s", i, out)
 		}
 	}
 }

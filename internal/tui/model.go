@@ -34,11 +34,12 @@ const (
 	tabOverview tabIndex = iota
 	tabCleanup
 	tabDisk
+	tabDupes
 	tabTrash
 	tabCount
 )
 
-var tabNames = []string{"Overview", "Cleanup", "Disk", "Trash"}
+var tabNames = []string{"Overview", "Cleanup", "Disk", "Duplicates", "Trash"}
 
 type phase int
 
@@ -88,17 +89,24 @@ type model struct {
 	trashRep   *trash.Report
 	restorable []trash.Record
 
+	dupes        dupeState
+	dupeProgress string
+
 	tab    tabIndex
 	width  int
 	height int
 	frame  int
 	busy   string
 
-	prompt   *promptState
-	logs     []logLine
-	quitting bool
-	err      error
-	events   chan tea.Msg
+	prompt        *promptState
+	beetleX       int
+	beetleDir     int
+	beetleWalking bool
+	happyUntil    int
+	logs          []logLine
+	quitting      bool
+	err           error
+	events        chan tea.Msg
 }
 
 type tickMsg time.Time
@@ -196,7 +204,7 @@ func (m *model) Init() tea.Cmd {
 }
 
 func (m *model) tick() tea.Cmd {
-	return tea.Tick(300*time.Millisecond, func(t time.Time) tea.Msg { return tickMsg(t) })
+	return tea.Tick(150*time.Millisecond, func(t time.Time) tea.Msg { return tickMsg(t) })
 }
 
 func (m *model) fetchSnap() tea.Cmd {
@@ -415,6 +423,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tickMsg:
 		m.frame++
+		b := m.beetle()
+		b.walkStep(m.beetleMaxX())
+		m.beetleX, m.beetleDir, m.beetleWalking = b.x, b.dir, b.walking
 		return m, m.tick()
 
 	case snapMsg:
@@ -450,6 +461,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if msg.rep != nil {
+			m.celebrate()
 			m.addLog("ok", fmt.Sprintf("freed %s in %s", units.HumanBytes(msg.rep.Bytes),
 				plural(int64(len(msg.rep.Removed)), "target", "targets")))
 			if len(msg.rep.Failed) > 0 {
@@ -493,6 +505,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if msg.rep != nil {
+			m.celebrate()
 			m.addLog("ok", fmt.Sprintf("restored %s from the trash", units.HumanBytes(msg.rep.Bytes)))
 		}
 		return m, m.fetchTrash()
@@ -504,12 +517,16 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if msg.rep != nil {
+			m.celebrate()
 			m.addLog("ok", fmt.Sprintf("emptied the trash — %s freed", units.HumanBytes(msg.rep.Bytes)))
 		}
 		return m, m.fetchTrash()
 
 	case tea.KeyMsg:
 		return m.handleKey(msg)
+	}
+	if cmd, ok := m.handleDupeMsg(msg); ok {
+		return m, cmd
 	}
 	return m, nil
 }
@@ -541,6 +558,12 @@ func (m *model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	if m.tab == tabDupes {
+		if cmd, ok := m.handleDupeKey(key); ok {
+			return m, cmd
+		}
+	}
+
 	switch key {
 	case "q", "ctrl+c":
 		m.quitting = true
@@ -552,6 +575,8 @@ func (m *model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "3":
 		m.tab = tabDisk
 	case "4":
+		m.tab = tabDupes
+	case "5":
 		m.tab = tabTrash
 	case "tab", "right", "l":
 		m.tab = (m.tab + 1) % tabCount
@@ -646,12 +671,18 @@ func (m *model) View() string {
 	if width < 40 {
 		width = 100
 	}
-	return lipgloss.JoinVertical(lipgloss.Left,
+	out := lipgloss.JoinVertical(lipgloss.Left,
 		m.headerView(width),
 		m.tabsView(),
 		m.bodyView(width),
 		m.footerView(width),
 	)
+	// Nothing may be wider than the terminal, whatever the active view did.
+	lines := strings.Split(out, "\n")
+	for i, l := range lines {
+		lines[i] = clampLine(l, width)
+	}
+	return strings.Join(lines, "\n")
 }
 
 func (m *model) headerView(width int) string {
@@ -690,13 +721,15 @@ func (m *model) bodyView(width int) string {
 		content = m.cleanupView()
 	case tabDisk:
 		content = m.diskView()
+	case tabDupes:
+		content = m.dupesView()
 	case tabTrash:
 		content = m.trashView()
 	}
 	if width >= 88 {
 		panelWidth := 32
 		panel := panelStyle.Width(panelWidth - 2).Render(
-			mascotPanel(m.frame, m.speech(), m.isBusy(), panelWidth-4))
+			mascotPanel(m.beetle(), m.speech(), panelWidth-4))
 		left := lipgloss.NewStyle().Width(m.contentWidth()).Render(content)
 		return lipgloss.JoinHorizontal(lipgloss.Top, left, " ", panel)
 	}
@@ -728,6 +761,11 @@ func (m *model) speech() string {
 		return "pick something to clean"
 	case m.tab == tabDisk:
 		return "press s to scan"
+	case m.tab == tabDupes:
+		if m.dupes.scanned && len(m.dupes.groups) > 0 {
+			return fmt.Sprintf("%s to free up", units.HumanBytes(m.dupes.wasted))
+		}
+		return "press s to find duplicates"
 	case m.tab == tabTrash:
 		if m.trashRep != nil && m.trashRep.Items > 0 {
 			return fmt.Sprintf("%s in the bin", units.HumanBytes(m.trashRep.Bytes))
@@ -747,6 +785,8 @@ func (m *model) footerView(width int) string {
 		keys = "↑↓ move · space toggle · a all safe · n none · enter apply · r re-measure · q quit"
 	case tabDisk:
 		keys = "s scan home · v save snapshot · → next view · q quit"
+	case tabDupes:
+		keys = "↑↓ move · space mark copy · a mark all extra · n clear · enter trash marked · s search · q quit"
 	case tabTrash:
 		keys = "u restore items · enter empty bin · r refresh · q quit"
 	}
@@ -813,4 +853,38 @@ func shorten(p string) string {
 		p = "~" + strings.TrimPrefix(p, h)
 	}
 	return p
+}
+
+// beetle derives the mascot's state from the model.
+func (m *model) beetle() beetleState {
+	return beetleState{
+		frame:   m.frame,
+		busy:    m.isBusy(),
+		happy:   m.frame < m.happyUntil,
+		walking: m.beetleWalking,
+		x:       m.beetleX,
+		dir:     m.beetleDir,
+	}
+}
+
+// celebrate makes the beetle smile for a couple of seconds.
+func (m *model) celebrate() {
+	m.happyUntil = m.frame + 14
+}
+
+// beetleMaxX is how far the beetle can walk inside the mascot panel.
+func (m *model) beetleMaxX() int {
+	inner := 32 - 4 // panel width minus borders and padding
+	if inner < spriteW {
+		return 0
+	}
+	return inner - spriteW
+}
+
+// clampLine cuts a rendered line down to w visible cells, keeping ANSI codes.
+func clampLine(line string, w int) string {
+	if lipgloss.Width(line) <= w {
+		return line
+	}
+	return lipgloss.NewStyle().MaxWidth(w).Render(line)
 }
