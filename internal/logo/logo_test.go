@@ -84,8 +84,9 @@ func TestPNGIsCrispPixelArt(t *testing.T) {
 	if c := img.NRGBAAt(px, py); c.R != 0xFF || c.G != 0xFF || c.B != 0xFF {
 		t.Errorf("eye pixel = %+v, want white", c)
 	}
-	if img.NRGBAAt(px-scale, py) == img.NRGBAAt(px+scale, py) {
-		t.Error("neighbouring sprite cells share a colour, the art may be washed out")
+	// The row above the eyes is shell, so the eye must stand out from it.
+	if img.NRGBAAt(px, py-scale) == img.NRGBAAt(px, py) {
+		t.Error("the eye does not stand out from the shell above it")
 	}
 }
 

@@ -20,6 +20,7 @@ func newLogoCommand() *cobra.Command {
 		transparent bool
 		ascii       bool
 		variant     string
+		format      string
 	)
 	cmd := &cobra.Command{
 		Use:   "logo",
@@ -73,16 +74,36 @@ Examples:
 				}
 				opts.Background = logo.RGBA{R: c.R, G: c.G, B: c.B, A: c.A}
 			}
+			if format == "" {
+				format = "png"
+				if strings.HasSuffix(strings.ToLower(out), ".svg") {
+					format = "svg"
+				}
+			}
 			if out == "" {
-				out = fmt.Sprintf("vynsh-logo-%d.png", size)
+				out = fmt.Sprintf("vynsh-logo-%d.%s", size, format)
 			}
 			f, err := os.Create(out)
 			if err != nil {
 				return err
 			}
 			defer f.Close()
-			if err := logo.WritePNG(f, sprite, opts); err != nil {
-				return err
+			switch format {
+			case "svg":
+				// size is the display width in pixels for vector output
+				var bg *logo.RGBA
+				if !transparent {
+					bg = &opts.Background
+				}
+				if _, err := f.WriteString(logo.SVG(sprite, bg, size)); err != nil {
+					return err
+				}
+			case "png":
+				if err := logo.WritePNG(f, sprite, opts); err != nil {
+					return err
+				}
+			default:
+				return fmt.Errorf("unknown format %q (png or svg)", format)
 			}
 			info, _ := f.Stat()
 			fmt.Fprintf(cmd.OutOrStdout(), "%s wrote %s (%dx%d, %s)\n", g.th.Green("✓"), out,
@@ -96,7 +117,8 @@ Examples:
 	cmd.Flags().StringVar(&bg, "bg", "#0d0b1a", "background colour when --bg is used instead of transparency")
 	cmd.Flags().BoolVar(&transparent, "transparent", true, "transparent background")
 	cmd.Flags().BoolVar(&ascii, "ascii", false, "print the sprite in the terminal instead of writing a PNG")
-	cmd.Flags().StringVar(&variant, "variant", "base", "which pose to export: base, hop or blink")
+	cmd.Flags().StringVar(&variant, "variant", "base", "which pose to export: base, hop, blink, wink, reference")
+	cmd.Flags().StringVar(&format, "format", "", "png or svg (inferred from the file extension)")
 	return cmd
 }
 

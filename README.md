@@ -12,7 +12,7 @@
 
 macOS · Windows · Linux. Один статический бинарник, без зависимостей.
 
-<img src="assets/logo-1024.png" width="220" alt="Маскот vynsh">
+![Маскот vynsh](assets/logo-288-dark.png)
 
 ## Установка
 
@@ -295,8 +295,9 @@ vynsh logo --variant hop --out hop.png
 vynsh logo --ascii
 ```
 
-Готовые файлы: [`assets/logo-1024.png`](assets/logo-1024.png),
-[`logo-1024-dark.png`](assets/logo-1024-dark.png), [`logo-512.png`](assets/logo-512.png).
+Готовые файлы: [`assets/logo.svg`](assets/logo.svg) (вектор, не мылится при
+масштабировании), [`logo-288-dark.png`](assets/logo-288-dark.png),
+[`logo-1024.png`](assets/logo-1024.png) и [`logo-512.png`](assets/logo-512.png) (прозрачный фон).
 
 ## Безопасность
 

@@ -48,21 +48,21 @@ var Palette = map[byte]RGBA{
 	'L': {0x4C, 0x1D, 0x95, 0xFF}, // antennae and legs: violet-900
 }
 
-// The beetle. The body tapers at the top and at the bottom, so the silhouette
-// reads as a rounded shell instead of a striped rectangle, while the eyes,
-// antennae and legs stay in the same places.
+// The beetle. The body tapers top and bottom, and the eyes are square dots
+// rather than long bars: at small sizes (README, terminal) the shape reads as a
+// face instead of a striped plate.
 //
 //	L.......L     antenna tips
 //	.L.....L.     antennae
 //	..SSSSS..     top of the shell
-//	.SEESEES.     eyes
+//	.SESSSES.     eyes
 //	..HHHHH..     shell shade
 //	..L.L.L..     legs
 var Base = Sprite{
 	"L.......L",
 	".L.....L.",
 	"..SSSSS..",
-	".SEESEES.",
+	".SESSSES.",
 	"..HHHHH..",
 	"..L.L.L..",
 }
@@ -82,7 +82,7 @@ var Wink = Sprite{
 	"L.......L",
 	".L.....L.",
 	"..SSSSS..",
-	".SEESSSS.",
+	".SESSSSS.",
 	"..HHHHH..",
 	"..L.L.L..",
 }
@@ -92,7 +92,7 @@ var AntennaeUp = Sprite{
 	"L.......L",
 	"..L...L..",
 	"..SSSSS..",
-	".SEESEES.",
+	".SESSSES.",
 	"..HHHHH..",
 	"..L.L.L..",
 }
@@ -101,7 +101,7 @@ var AntennaeDown = Sprite{
 	".L.....L.",
 	"L.......L",
 	"..SSSSS..",
-	".SEESEES.",
+	".SESSSES.",
 	"..HHHHH..",
 	"..L.L.L..",
 }
@@ -111,7 +111,7 @@ var Hop = Sprite{
 	"L.......L",
 	".L.....L.",
 	"..SSSSS..",
-	".SEESEES.",
+	".SESSSES.",
 	"..HHHHH..",
 	"..L...L..",
 }
@@ -121,7 +121,7 @@ var Type1 = Sprite{
 	"L.......L",
 	".L.....L.",
 	"..SSSSS..",
-	".SEESEES.",
+	".SESSSES.",
 	"..HHHHH..",
 	".L.L.L.L.",
 }
@@ -130,9 +130,27 @@ var Type2 = Sprite{
 	"L.......L",
 	".L.....L.",
 	"..SSSSS..",
-	".SEESEES.",
+	".SESSSES.",
 	"..HHHHH..",
 	"..L...L..",
+}
+
+// Reference is the original artwork the mascot was drawn from: a flat shell
+// with wide eyes. It is kept as a selectable variant for anyone who prefers it.
+//
+//	L.......L
+//	.L.....L.
+//	.SSSSSSS.
+//	.SEESEES.
+//	.SHHHHHH.
+//	..L.L.L..
+var Reference = Sprite{
+	"L.......L",
+	".L.....L.",
+	".SSSSSSS.",
+	".SEESEES.",
+	".SHHHHHH.",
+	"..L.L.L..",
 }
 
 // All returns every sprite variant by name.
@@ -146,6 +164,7 @@ func All() map[string]Sprite {
 		"type1":     Type1,
 		"type2":     Type2,
 		"antennae2": AntennaeDown,
+		"reference": Reference,
 	}
 }
 
@@ -265,6 +284,38 @@ func fill(img *image.NRGBA, c RGBA) {
 // WritePNG encodes the sprite and writes it to w.
 func WritePNG(w io.Writer, s Sprite, opts Options) error {
 	return png.Encode(w, PNG(s, opts))
+}
+
+// SVG renders the sprite as a vector image: one rectangle per pixel with
+// crisp edges. Unlike a PNG it stays sharp at any size, which matters for the
+// README where the logo is shown small.
+func SVG(s Sprite, bg *RGBA, displayWidth int) string {
+	if displayWidth <= 0 {
+		displayWidth = s.Width() * 32
+	}
+	displayHeight := displayWidth * s.Height() / s.Width()
+	var b strings.Builder
+	fmt.Fprintf(&b, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d" shape-rendering="crispEdges">`+"\n",
+		s.Width(), s.Height(), displayWidth, displayHeight)
+	if bg != nil {
+		fmt.Fprintf(&b, `<rect width="%d" height="%d" fill="%s"/>`+"\n", s.Width(), s.Height(), cssColor(*bg))
+	}
+	for y := 0; y < s.Height(); y++ {
+		for x := 0; x < s.Width(); x++ {
+			c, ok := Palette[s.At(x, y)]
+			if !ok {
+				continue
+			}
+			fmt.Fprintf(&b, `<rect x="%d" y="%d" width="1" height="1" fill="%s"/>`+"\n", x, y, cssColor(c))
+		}
+	}
+	b.WriteString("</svg>\n")
+	return b.String()
+}
+
+// cssColor formats a colour for SVG.
+func cssColor(c RGBA) string {
+	return fmt.Sprintf("#%02x%02x%02x", c.R, c.G, c.B)
 }
 
 // ParseHex turns "#rrggbb" (or "#rrggbbaa") into a colour.
