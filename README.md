@@ -1,4 +1,4 @@
-# vynsh
+![vynsh — очистка диска, корзины и анализ системы](assets/vynsh-hero.png)
 
 [![release](https://img.shields.io/github/v/release/jaraslaukunin/vynsh?include_prereleases&style=flat-square&label=release&color=7c3aed&labelColor=1b1230)](https://github.com/jaraslaukunin/vynsh/releases)
 [![ci](https://img.shields.io/github/actions/workflow/status/jaraslaukunin/vynsh/ci.yml?branch=main&style=flat-square&label=ci&color=7c3aed&labelColor=1b1230)](https://github.com/jaraslaukunin/vynsh/actions/workflows/ci.yml)
@@ -14,8 +14,6 @@
 план и подтвердили его.
 
 macOS · Windows · Linux. Один статический бинарник, без зависимостей.
-
-![Маскот vynsh](assets/logo-288-dark.png)
 
 ## Установка
 
@@ -295,12 +293,14 @@ vynsh config --init          # создать файл настроек
 vynsh logo                                   # vynsh-logo-1024.png, прозрачный
 vynsh logo --size 512 --bg "#0d0b1a"
 vynsh logo --variant hop --out hop.png
+vynsh logo --hero vynsh --tight --out vynsh-hero.png   # жук + надпись
 vynsh logo --ascii
 ```
 
-Готовые файлы: [`assets/logo.svg`](assets/logo.svg) (вектор, не мылится при
-масштабировании), [`logo-288-dark.png`](assets/logo-288-dark.png),
-[`logo-1024.png`](assets/logo-1024.png) и [`logo-512.png`](assets/logo-512.png) (прозрачный фон).
+Готовые файлы: [`assets/vynsh-hero.svg`](assets/vynsh-hero.svg) — лок-ап с надписью
+(вектор), [`logo-1024.png`](assets/logo-1024.png) и
+[`logo-512.png`](assets/logo-512.png) — только жук, прозрачный фон,
+[`logo-1024-dark.png`](assets/logo-1024-dark.png) — на тёмной плашке.
 
 ## Безопасность
 

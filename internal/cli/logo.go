@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"image/png"
 	"os"
 	"strings"
 
@@ -21,6 +22,9 @@ func newLogoCommand() *cobra.Command {
 		ascii       bool
 		variant     string
 		format      string
+		hero        string
+		gap         int
+		tight       bool
 	)
 	cmd := &cobra.Command{
 		Use:   "logo",
@@ -39,6 +43,11 @@ Examples:
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sprite, ok := logo.All()[strings.ToLower(variant)]
+			if hero != "" {
+				// Compose the mascot with the pixel wordmark into one lockup.
+				sprite = logo.Hero(logo.Base, hero, gap)
+				ok = true
+			}
 			if !ok {
 				names := make([]string, 0, 3)
 				for name := range logo.All() {
@@ -66,6 +75,7 @@ Examples:
 				Size:        size,
 				Padding:     padding,
 				Transparent: transparent,
+				Tight:       tight || hero != "",
 			}
 			if !transparent {
 				c, err := logo.ParseHex(bg)
@@ -88,6 +98,7 @@ Examples:
 				return err
 			}
 			defer f.Close()
+			var dims string
 			switch format {
 			case "svg":
 				// size is the display width in pixels for vector output
@@ -98,16 +109,19 @@ Examples:
 				if _, err := f.WriteString(logo.SVG(sprite, bg, size)); err != nil {
 					return err
 				}
+				dims = fmt.Sprintf("%dx%d", size, size*sprite.Height()/sprite.Width())
 			case "png":
-				if err := logo.WritePNG(f, sprite, opts); err != nil {
+				img := logo.PNG(sprite, opts)
+				if err := png.Encode(f, img); err != nil {
 					return err
 				}
+				dims = fmt.Sprintf("%dx%d", img.Bounds().Dx(), img.Bounds().Dy())
 			default:
 				return fmt.Errorf("unknown format %q (png or svg)", format)
 			}
 			info, _ := f.Stat()
-			fmt.Fprintf(cmd.OutOrStdout(), "%s wrote %s (%dx%d, %s)\n", g.th.Green("✓"), out,
-				size, size, humanFileSize(info))
+			fmt.Fprintf(cmd.OutOrStdout(), "%s wrote %s (%s, %s)\n", g.th.Green("✓"), out,
+				dims, humanFileSize(info))
 			return nil
 		},
 	}
@@ -119,6 +133,9 @@ Examples:
 	cmd.Flags().BoolVar(&ascii, "ascii", false, "print the sprite in the terminal instead of writing a PNG")
 	cmd.Flags().StringVar(&variant, "variant", "base", "which pose to export: base, hop, blink, wink, antennae, type1")
 	cmd.Flags().StringVar(&format, "format", "", "png or svg (inferred from the file extension)")
+	cmd.Flags().StringVar(&hero, "hero", "", `compose the mascot with a wordmark, e.g. --hero vynsh`)
+	cmd.Flags().IntVar(&gap, "gap", 3, "space between the mascot and the wordmark, in pixels")
+	cmd.Flags().BoolVar(&tight, "tight", false, "crop the canvas to the art (no square padding)")
 	return cmd
 }
 

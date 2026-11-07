@@ -199,6 +199,8 @@ type Options struct {
 	Transparent bool
 	// Padding is extra breathing room around the sprite, in final pixels.
 	Padding int
+	// Tight crops the canvas to the art instead of centring it in a square.
+	Tight bool
 }
 
 // PNG renders the sprite into a square image. Scaling uses integer factors and
@@ -216,7 +218,7 @@ func PNG(s Sprite, opts Options) *image.NRGBA {
 
 	w, h := s.Width(), s.Height()
 	avail := size - 2*opts.Padding
-	if avail <= 0 {
+	if opts.Tight || avail <= 0 {
 		avail = size
 	}
 	scale := avail / maxInt(w, h)
@@ -224,8 +226,14 @@ func PNG(s Sprite, opts Options) *image.NRGBA {
 		scale = 1
 	}
 	artW, artH := w*scale, h*scale
-	offX := (size - artW) / 2
-	offY := (size - artH) / 2
+	offX, offY := (size-artW)/2, (size-artH)/2
+	if opts.Tight {
+		img = image.NewNRGBA(image.Rect(0, 0, artW, artH))
+		if !opts.Transparent {
+			fill(img, opts.Background)
+		}
+		offX, offY = 0, 0
+	}
 
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
