@@ -8,7 +8,7 @@ import (
 )
 
 func TestSelectByCategory(t *testing.T) {
-	rules, err := Select(nil, []string{"dev"}, true)
+	rules, err := Select(nil, []string{"dev"}, true, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -20,7 +20,7 @@ func TestSelectByCategory(t *testing.T) {
 			t.Errorf("rule %s has category %s, want dev", r.ID, r.Category)
 		}
 	}
-	if _, err := Select(nil, []string{"nope"}, true); err == nil {
+	if _, err := Select(nil, []string{"nope"}, true, true); err == nil {
 		t.Error("expected error for unknown category")
 	}
 }
@@ -31,7 +31,7 @@ func TestSelectByID(t *testing.T) {
 		t.Fatal("no rules for this platform")
 	}
 	id := all[0].ID
-	rules, err := Select([]string{id}, nil, false)
+	rules, err := Select([]string{id}, nil, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,11 +41,11 @@ func TestSelectByID(t *testing.T) {
 }
 
 func TestSelectHighRiskGating(t *testing.T) {
-	withHigh, err := Select(nil, nil, true)
+	withHigh, err := Select(nil, nil, true, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	withoutHigh, err := Select(nil, nil, false)
+	withoutHigh, err := Select(nil, nil, false, false)
 	if err != nil {
 		t.Fatal(err)
 	}

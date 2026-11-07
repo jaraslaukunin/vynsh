@@ -87,7 +87,7 @@ Examples:
 			data.Host = snap.Hostname
 			data.Platform = snap.Platform
 
-			rules, _ := clean.Select(nil, nil, false)
+			rules, _ := clean.Select(nil, nil, false, false)
 			targets := clean.Discover(rules, clean.DiscoverOptions{})
 			byRule := map[string]*cacheLine{}
 			for _, t := range targets {
@@ -222,10 +222,10 @@ func printReport(w io.Writer, d *reportData) {
 func buildSuggestions(d *reportData) []string {
 	var out []string
 	if d.CacheTotal > 200_000_000 {
-		out = append(out, fmt.Sprintf("vynsh clean --yes        # removes %s of caches", units.HumanBytes(d.CacheTotal)))
+		out = append(out, fmt.Sprintf("vynsh clean              # removes %s of caches", units.HumanBytes(d.CacheTotal)))
 	}
 	if d.TrashBytes > 100_000_000 {
-		out = append(out, fmt.Sprintf("vynsh trash empty --yes  # removes %s from the trash", units.HumanBytes(d.TrashBytes)))
+		out = append(out, fmt.Sprintf("vynsh trash empty        # removes %s from the trash", units.HumanBytes(d.TrashBytes)))
 	}
 	var biggest *scan.Node
 	for i := range d.HomeTop {

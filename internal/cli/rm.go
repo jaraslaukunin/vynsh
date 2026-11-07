@@ -28,7 +28,6 @@ func newRmCmd() *cobra.Command {
 		toTrash   bool
 		limit     int64
 		dryRun    bool
-		noConfirm bool
 	)
 	cmd := &cobra.Command{
 		Use:   "rm <path-or-glob ...>",
@@ -39,9 +38,10 @@ Filters are combined with AND: a file is selected only when every filter
 matches. Directories are never deleted recursively; --empty-dirs removes
 directories that are empty after the files have been removed.
 
-Nothing is deleted unless you pass --yes (and even then the plan is printed and
-confirmed interactively). With --trash the files are moved to the recycle bin
-instead of being unlinked, so a mistake stays recoverable.
+The plan is always printed first. In a terminal vynsh asks before deleting;
+in scripts nothing happens without --yes, and --dry-run always only reports.
+With --trash the files are moved to the recycle bin instead of being unlinked,
+so a mistake stays recoverable.
 
 Examples:
   vynsh rm ~/Downloads --older-than 90d
@@ -84,11 +84,8 @@ Examples:
 			f.Names = names
 			f.Exts = exts
 			f.ExcludeNames = exclude
-			if f.OlderThan == 0 && f.NewerThan == 0 && f.MinSize == 0 && f.MaxSize == 0 &&
-				len(names) == 0 && len(exts) == 0 && !dryRun && !noConfirm {
-				fmt.Fprintf(out, "%s no filters given: every file under the given paths would be selected\n",
-					g.th.Yellow("note:"))
-			}
+			noFilters := f.OlderThan == 0 && f.NewerThan == 0 && f.MinSize == 0 && f.MaxSize == 0 &&
+				len(names) == 0 && len(exts) == 0
 
 			sp := style.NewSpinner(os.Stderr, g.th, "building deletion plan")
 			sp.Start()
@@ -113,17 +110,23 @@ Examples:
 			}
 
 			if len(plan.Items) == 0 {
-				fmt.Fprintf(out, "%s nothing matched — no files selected\n", g.th.Dim("plan:"))
 				if len(plan.Errors) > 0 {
-					for _, e := range plan.Errors {
-						fmt.Fprintf(out, "  %s\n", g.th.Dim(e))
+					shown := plan.Errors
+					if len(shown) > 3 {
+						shown = shown[:3]
 					}
+					return fmt.Errorf("nothing to delete: %s", strings.Join(shown, "; "))
 				}
+				fmt.Fprintf(out, "%s nothing matched — no files selected\n", g.th.Dim("plan:"))
 				return nil
 			}
+			if noFilters {
+				fmt.Fprintf(out, "%s no filters given: every matching file under the given paths was selected\n",
+					g.th.Yellow("note:"))
+			}
 			printPlan(out, plan)
-			if dryRun || !g.yes {
-				fmt.Fprintf(out, "%s\n", g.th.Dim("This was a dry run. Re-run with --yes to delete, or add --trash to be able to undo."))
+			if dryRun {
+				fmt.Fprintf(out, "%s\n", g.th.Dim("This was a dry run: nothing was deleted."))
 				return nil
 			}
 			useTrash := toTrash || g.cfg.TrashByDefault
@@ -131,8 +134,10 @@ Examples:
 			if useTrash {
 				target = "move to the trash"
 			}
-			if !confirm(fmt.Sprintf("%s %d items (%s)?", strings.ToUpper(target[:1])+target[1:], len(plan.Items), units.HumanBytes(plan.Bytes))) {
-				fmt.Fprintln(out, g.th.Dim("aborted — nothing was deleted"))
+			question := fmt.Sprintf("%s %s (%s)?", strings.ToUpper(target[:1])+target[1:],
+				plural(int64(len(plan.Items)), "item", "items"), units.HumanBytes(plan.Bytes))
+			if !mayDelete(out, question,
+				"Dry run: nothing was deleted. Re-run in a terminal to confirm, or pass --yes for unattended deletion.") {
 				return nil
 			}
 			root := ""
@@ -187,7 +192,6 @@ Examples:
 	cmd.Flags().BoolVar(&toTrash, "trash", false, "move to the recycle bin instead of deleting")
 	cmd.Flags().Int64Var(&limit, "limit", 0, "stop after this many items")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "show the plan, delete nothing (overrides --yes)")
-	cmd.Flags().BoolVar(&noConfirm, "no-confirm-hint", false, "hide the note about missing filters")
 	return cmd
 }
 

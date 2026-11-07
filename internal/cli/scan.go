@@ -45,7 +45,7 @@ Examples:
 			if len(args) == 0 {
 				args = []string{"."}
 			}
-			useBars := bars && !noBar && g.th.Enabled
+			useBars := bars && !noBar && style.IsTerminal(os.Stdout)
 			minBytes := int64(0)
 			if minSize != "" {
 				v, err := units.ParseBytes(minSize)

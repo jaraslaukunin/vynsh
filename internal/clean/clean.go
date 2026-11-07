@@ -82,8 +82,10 @@ func All() []Rule {
 	return out
 }
 
-// Select filters rules by id and category.
-func Select(ids, categories []string, includeHigh bool) ([]Rule, error) {
+// Select filters rules by id and category. High risk rules are only included
+// when includeHigh is set (or the rule is named explicitly), and rules that need
+// administrator rights only when includeAdmin is set.
+func Select(ids, categories []string, includeHigh, includeAdmin bool) ([]Rule, error) {
 	all := All()
 	idSet := map[string]bool{}
 	for _, id := range ids {
@@ -109,13 +111,16 @@ func Select(ids, categories []string, includeHigh bool) ([]Rule, error) {
 			if !idSet[r.ID] {
 				continue
 			}
-			out = append(out, r)
+			out = append(out, r) // explicitly named: take it as is
 			continue
 		}
 		if len(catSet) > 0 && !catSet[strings.ToLower(r.Category)] {
 			continue
 		}
-		if r.Risk == RiskHigh && !includeHigh && !idSet[r.ID] {
+		if r.Risk == RiskHigh && !includeHigh {
+			continue
+		}
+		if r.Admin && !includeAdmin {
 			continue
 		}
 		out = append(out, r)
@@ -328,4 +333,15 @@ func Total(targets []Target) int64 {
 		sum += t.Size
 	}
 	return sum
+}
+
+// AdminRules returns the rules that need administrator rights.
+func AdminRules() []Rule {
+	var out []Rule
+	for _, r := range All() {
+		if r.Admin {
+			out = append(out, r.Normalized())
+		}
+	}
+	return out
 }

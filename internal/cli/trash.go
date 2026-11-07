@@ -19,9 +19,9 @@ files into it instead of deleting them for good.
 
 Examples:
   vynsh trash                 # how much is in the trash
-  vynsh trash empty           # measure, then ask for confirmation
-  vynsh trash empty --yes     # empty without asking
-  vynsh trash add ./old.log --yes`,
+  vynsh trash empty           # show the size, then ask for confirmation
+  vynsh trash empty --yes     # empty without asking (scripts)
+  vynsh trash add ./old.log`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !trash.Supported() {
@@ -56,7 +56,7 @@ func newTrashEmptyCmd() *cobra.Command {
 			if !trash.Supported() {
 				return fmt.Errorf("trash is not supported on %s", osName())
 			}
-			if dryRun || !g.yes {
+			if dryRun || !g.yes || g.json {
 				rep, err := trash.Inspect()
 				if err != nil {
 					return err
@@ -69,12 +69,15 @@ func newTrashEmptyCmd() *cobra.Command {
 					fmt.Fprintf(out, "%s\n", g.th.Dim("Trash is already empty."))
 					return nil
 				}
-				fmt.Fprintf(out, "\n%s\n", g.th.Dim("This was a dry run. Re-run with --yes to empty the trash."))
-				return nil
-			}
-			if !confirm("Empty the trash permanently?") {
-				fmt.Fprintln(out, g.th.Dim("aborted — trash left untouched"))
-				return nil
+				if !dryRun {
+					if !mayDelete(out, "Empty the trash permanently?",
+						"Dry run: the trash was left untouched. Re-run in a terminal to confirm, or pass --yes.") {
+						return nil
+					}
+				} else {
+					fmt.Fprintf(out, "\n%s\n", g.th.Dim("This was a dry run: the trash was left untouched."))
+					return nil
+				}
 			}
 			rep, err := trash.Empty(false)
 			if err != nil {
@@ -126,8 +129,14 @@ func newTrashAddCmd() *cobra.Command {
 					}
 					fmt.Fprintf(out, "  %s %s → %s\n", units.HumanBytes(m.Bytes), m.Path, g.th.Dim(state))
 				}
-				fmt.Fprintf(out, "\n%s\n", g.th.Dim("Dry run. Re-run with --yes to move these items to the trash."))
-				return nil
+				if dryRun {
+					fmt.Fprintf(out, "\n%s\n", g.th.Dim("This was a dry run: nothing was moved."))
+					return nil
+				}
+				if !mayDelete(out, fmt.Sprintf("Move %s to the trash?", plural(int64(len(args)), "item", "items")),
+					"Dry run: nothing was moved. Re-run in a terminal to confirm, or pass --yes.") {
+					return nil
+				}
 			}
 			rep, err := trash.Move(args, false)
 			if err != nil {

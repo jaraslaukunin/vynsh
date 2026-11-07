@@ -17,11 +17,12 @@ import (
 
 func newCleanCmd() *cobra.Command {
 	var (
-		only        []string
-		category    []string
-		includeHigh bool
-		list        bool
-		dryRun      bool
+		only         []string
+		category     []string
+		includeHigh  bool
+		includeAdmin bool
+		list         bool
+		dryRun       bool
 	)
 	cmd := &cobra.Command{
 		Use:   "clean",
@@ -29,9 +30,11 @@ func newCleanCmd() *cobra.Command {
 		Long: `Measure and remove well-known junk: build caches, package manager caches,
 browser caches, logs, crash reports and temporary files.
 
-By default vynsh only measures and prints what it found — nothing is deleted
-without --yes. Rules marked "high" risk (Xcode archives, device support, package
-repositories) are skipped unless you pass --high or name them with --only.
+vynsh first measures and prints what it found. In a terminal it then asks for
+confirmation; in scripts (no terminal) it stays a dry run unless --yes is given,
+and --dry-run always means "measure only". Rules marked "high" risk (Xcode
+archives, device support, package repositories) are skipped unless you pass
+--high or name them with --only.
 
 The contents of cache directories are removed, the directories themselves are
 kept so applications keep working.
@@ -39,13 +42,14 @@ kept so applications keep working.
 Examples:
   vynsh clean                          # measure everything, change nothing
   vynsh clean --category dev           # only developer caches
-  vynsh clean --only go-build-cache --yes
-  vynsh clean --high --yes             # include risky rules
+  vynsh clean --only go-build-cache
+  vynsh clean --high                  # include risky rules
+  vynsh clean --admin                 # also system paths (sudo)
   vynsh clean --list                   # show the rule catalogue`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cmd.OutOrStdout()
-			rules, err := clean.Select(only, category, includeHigh)
+			rules, err := clean.Select(only, category, includeHigh, includeAdmin)
 			if err != nil {
 				return err
 			}
@@ -88,18 +92,25 @@ Examples:
 			total := printCleanRules(out, present, cats)
 
 			fmt.Fprintf(out, "%s %s\n", g.th.Title("Total reclaimable:"), g.th.Bold(units.HumanBytes(total)))
+			if !includeAdmin && len(only) == 0 {
+				if n := len(clean.AdminRules()); n > 0 {
+					fmt.Fprintf(out, "%s\n", g.th.Dim(fmt.Sprintf(
+						"%s need administrator rights and are skipped; add --admin (or run with sudo) to include them.",
+						plural(int64(n), "rule", "rules"))))
+				}
+			}
 			if len(present) == 0 {
 				fmt.Fprintf(out, "%s\n", g.th.Dim("Nothing to clean — you are already tidy."))
 				return nil
 			}
-			delete := g.yes && !dryRun
-			if !delete {
-				rep := clean.Apply(present, true, nil)
-				printCleanReport(out, rep)
+			if dryRun {
+				printCleanReport(out, clean.Apply(present, true, nil))
 				return nil
 			}
-			if !confirm(fmt.Sprintf("Remove %s across %d targets?", units.HumanBytes(total), len(present))) {
-				fmt.Fprintln(out, g.th.Dim("aborted — nothing was deleted"))
+			if !mayDelete(out,
+				fmt.Sprintf("Remove %s of caches across %s?", units.HumanBytes(total),
+					plural(int64(len(present)), "target", "targets")),
+				"Dry run: nothing was deleted. Re-run in a terminal to confirm, or pass --yes for unattended cleanup.") {
 				return nil
 			}
 			before := freeSpace(fsutil.HomeDir())
@@ -113,6 +124,7 @@ Examples:
 	cmd.Flags().StringSliceVar(&only, "only", nil, "comma separated rule ids to apply")
 	cmd.Flags().StringSliceVar(&category, "category", nil, "limit to categories: dev, browsers, apps, logs, system, temp")
 	cmd.Flags().BoolVar(&includeHigh, "high", false, "include high-risk rules (archives, package repositories)")
+	cmd.Flags().BoolVar(&includeAdmin, "admin", false, "include rules for system paths (needs root / administrator)")
 	cmd.Flags().BoolVar(&list, "list", false, "list the available rules without measuring")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "measure only, never delete (overrides --yes)")
 	return cmd

@@ -29,9 +29,9 @@ func share(part, total int64) float64 {
 
 func colorShare(th *style.Theme, s string, pct float64) string {
 	switch {
-	case pct >= 50:
+	case pct >= 75:
 		return th.Red(s)
-	case pct >= 20:
+	case pct >= 30:
 		return th.Yellow(s)
 	default:
 		return s
@@ -209,7 +209,7 @@ func printTree(w io.Writer, n *scan.Node, total int64, prefix string, connector 
 				}
 				return 0
 			}()),
-			childPrefix+"└─ "+g.th.Dim(fmt.Sprintf("%d smaller entries (below threshold)", hiddenCount)))
+			childPrefix+"└─ "+g.th.Dim(plural(int64(hiddenCount), "smaller entry", "smaller entries")+" (below threshold)"))
 		*rows++
 	}
 	// Files stored directly in this directory are not part of the child list.
@@ -609,8 +609,6 @@ func printSpaceLine(w io.Writer, before, after uint64) {
 		return
 	}
 	if after <= before {
-		fmt.Fprintf(w, "%s free space: %s %s\n", th.Dim("disk"), units.HumanBytes(int64(before)),
-			th.Dim("(unchanged — the OS may free the space later)"))
 		return
 	}
 	fmt.Fprintf(w, "%s free space: %s → %s %s\n", th.Green("✓"),

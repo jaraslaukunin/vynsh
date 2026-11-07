@@ -108,7 +108,7 @@ func (m *model) fetchSnap() tea.Cmd {
 
 func (m *model) fetchJunk() tea.Cmd {
 	return func() tea.Msg {
-		rules, err := clean.Select(nil, nil, false)
+		rules, err := clean.Select(nil, nil, false, false)
 		if err != nil {
 			return junkMsg{err: err}
 		}

@@ -30,7 +30,7 @@ Reclaimable 14.7 GB
 ...
 
 What to do next
-  • vynsh clean --yes        # removes 14.7 GB of caches
+  • vynsh clean              # removes 14.7 GB of caches
   • vynsh scan ~/Library --depth 2   # Library is 87% of your home
 ```
 
@@ -78,7 +78,7 @@ make release          # → dist/vynsh-<os>-<arch>[.exe]
 vynsh report                  # общая картина: что большое, что можно освободить
 vynsh scan ~/Downloads -d 3   # куда ушло место в загрузках
 vynsh clean                   # только измерить мусор (ничего не удаляет)
-vynsh clean --yes             # удалить безопасные кэши
+vynsh clean                   # измерить, затем подтвердить удаление
 vynsh usage                   # что сейчас грузит компьютер
 vynsh tui                     # интерактивный дашборд
 ```
@@ -87,9 +87,10 @@ vynsh tui                     # интерактивный дашборд
 
 Утилита удаляет файлы, поэтому модель безопасности — часть продукта:
 
-* **Ничего не удаляется без `--yes`.** Команды `clean`, `rm`, `trash empty` по умолчанию
-  работают как dry-run: показывают план, размеры и что именно будет удалено.
-  `rm` дополнительно спрашивает подтверждение в терминале.
+* **Ничего не удаляется молча.** Перед удалением всегда печатается план с размерами:
+  в терминале `clean`, `rm` и `trash empty` спрашивают подтверждение (ответ `y`);
+  в скриптах и cron (нет TTY) выполняется только dry-run, пока явно не передан `--yes`;
+  `--dry-run` отменяет удаление в любом случае.
 * **Защищённые пути.** Никогда не удаляются `/`, `/System`, `/usr`, `/Library`, `C:\Windows`,
   `C:\Program Files`, домашний каталог и его `Desktop`/`Documents`/`Downloads`.
   Свой список добавляется в конфиге (`protected`).
@@ -130,8 +131,8 @@ vynsh scan ~ --json > disk.json  # машинный формат
 vynsh clean                       # измерить всё, ничего не удалять
 vynsh clean --list                # каталог правил: id, риск, описание
 vynsh clean --category dev        # только кэши разработчика
-vynsh clean --only go-build-cache,gradle-cache --yes
-vynsh clean --high --yes          # включить правила с высоким риском
+vynsh clean --only go-build-cache,gradle-cache
+vynsh clean --high                # включить правила с высоким риском
 vynsh clean -v --only user-caches # показать конкретные каталоги внутри правила
 ```
 
@@ -147,15 +148,19 @@ NuGet, Go/npm/pnpm/yarn/pip/cargo/gradle/maven, эскизы Explorer,
 `%ProgramData%\...\WER` (отчёты об ошибках).
 
 Правила с риском `high` (архивы Xcode, iOS DeviceSupport, `~/.m2/repository`, NuGet)
-по умолчанию **не** выбираются — их нужно включать явно.
+по умолчанию **не** выбираются — их нужно включать явно (`--high` или `--only <id>`).
+
+Правила, которым нужны права администратора (`/Library/Caches`, `%SystemRoot%\Temp`,
+Windows Update), по умолчанию пропускаются: добавьте `--admin` и запустите через
+`sudo` (или от имени администратора), чтобы включить их.
 
 ### trash — корзина
 
 ```bash
 vynsh trash                    # размер и количество объектов
 vynsh trash empty              # dry-run: сколько освободится
-vynsh trash empty --yes        # опустошить
-vynsh trash add ~/old.dmg --yes  # отправить в корзину
+vynsh trash empty --yes        # опустошить без вопросов (для скриптов)
+vynsh trash add ~/old.dmg      # отправить в корзину
 ```
 
 macOS: `~/.Trash` плюс `.Trashes` на подключённых томах. Доступ к `~/.Trash` защищён

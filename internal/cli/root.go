@@ -40,14 +40,15 @@ func NewRoot() *cobra.Command {
 vynsh (винш) — a fast, cross-platform cleanup and analysis CLI.
 
 It finds out what actually fills your disk, removes the junk that is safe to
-remove, and shows what your computer is busy with. Nothing is deleted without
-you asking for it: destructive commands are dry runs unless you pass --yes.
+remove, and shows what your computer is busy with. Destructive commands always
+print a plan first: they ask for confirmation in a terminal, stay read-only in
+scripts unless you pass --yes, and honour --dry-run everywhere.
 
 Typical first run:
 
   vynsh report                 # what is big, what is junk, how much can be freed
   vynsh scan ~/Downloads       # where the space went
-  vynsh clean --yes            # remove safe caches
+  vynsh clean                  # measure junk, then confirm removal
   vynsh usage                  # CPU / memory / disk / network live snapshot`),
 		SilenceUsage:  true,
 		SilenceErrors: true,
