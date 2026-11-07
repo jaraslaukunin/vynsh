@@ -48,14 +48,15 @@ var Palette = map[byte]RGBA{
 	'L': {0x4C, 0x1D, 0x95, 0xFF}, // antennae and legs: violet-900
 }
 
-// Base is the beetle sitting down with its eyes open.
+// The beetle. The art is the reference: two antennae, a wide body, two eyes,
+// a darker band along the bottom of the shell and three legs.
 //
-//	L.......L
-//	.L.....L.
-//	.SSSSSSS.
-//	.SEESEES.
-//	.SHHHHHH.
-//	..L.L.L..
+//	L.......L     antenna tips
+//	.L.....L.     antennae
+//	.SSSSSSS.     body
+//	.SEESEES.     eyes
+//	.SHHHHHH.     shell shade
+//	..L.L.L..     legs
 var Base = Sprite{
 	"L.......L",
 	".L.....L.",
@@ -65,17 +66,7 @@ var Base = Sprite{
 	"..L.L.L..",
 }
 
-// Hop is the beetle with its legs tucked in, just off the ground.
-var Hop = Sprite{
-	"L.......L",
-	".L.....L.",
-	".SSSSSSS.",
-	".SEESEES.",
-	".SHHHHHH.",
-	"..L...L..",
-}
-
-// Blink is the beetle with its eyes closed.
+// Blink closes both eyes.
 var Blink = Sprite{
 	"L.......L",
 	".L.....L.",
@@ -85,16 +76,91 @@ var Blink = Sprite{
 	"..L.L.L..",
 }
 
+// Wink closes the right eye only.
+var Wink = Sprite{
+	"L.......L",
+	".L.....L.",
+	".SSSSSSS.",
+	".SEESSSS.",
+	".SHHHHHH.",
+	"..L.L.L..",
+}
+
+// Happy squints: the eyes shrink to the lower half of their row.
+var Happy = Sprite{
+	"L.......L",
+	".L.....L.",
+	".SSSSSSS.",
+	".SSESEES.",
+	".SHHHHHH.",
+	"..L.L.L..",
+}
+
+// AntennaeUp and AntennaeDown wiggle the antennae.
+var AntennaeUp = Sprite{
+	"L.......L",
+	"..L...L..",
+	".SSSSSSS.",
+	".SEESEES.",
+	".SHHHHHH.",
+	"..L.L.L..",
+}
+
+var AntennaeDown = Sprite{
+	".L.....L.",
+	"L.......L",
+	".SSSSSSS.",
+	".SEESEES.",
+	".SHHHHHH.",
+	"..L.L.L..",
+}
+
+// Hop tucks the legs in: the beetle is in the air.
+var Hop = Sprite{
+	"L.......L",
+	".L.....L.",
+	".SSSSSSS.",
+	".SEESEES.",
+	".SHHHHHH.",
+	"..L...L..",
+}
+
+// Type1 and Type2 alternate the feet while vynsh is working.
+var Type1 = Sprite{
+	"L.......L",
+	".L.....L.",
+	".SSSSSSS.",
+	".SEESEES.",
+	".SHHHHHH.",
+	".L.L.L.L.",
+}
+
+var Type2 = Sprite{
+	"L.......L",
+	".L.....L.",
+	".SSSSSSS.",
+	".SEESEES.",
+	".SHHHHHH.",
+	"..L...L..",
+}
+
 // All returns every sprite variant by name.
 func All() map[string]Sprite {
 	return map[string]Sprite{
-		"base":  Base,
-		"hop":   Hop,
-		"blink": Blink,
+		"base":      Base,
+		"blink":     Blink,
+		"wink":      Wink,
+		"happy":     Happy,
+		"antennae":  AntennaeUp,
+		"hop":       Hop,
+		"type1":     Type1,
+		"type2":     Type2,
+		"antennae2": AntennaeDown,
 	}
 }
 
-// Check validates that every sprite is a rectangle of the same size.
+// Check validates that every sprite is a rectangle of the same size, so the
+// terminal renderer and the PNG exporter always agree.
 func Check() error {
 	want := 0
 	for name, s := range All() {
@@ -143,11 +209,6 @@ type Options struct {
 	Transparent bool
 	// Padding is extra breathing room around the sprite, in final pixels.
 	Padding int
-}
-
-// DefaultOptions returns the branding defaults: 1024x1024, transparent.
-func DefaultOptions() Options {
-	return Options{Size: 1024, Transparent: true, Padding: 96}
 }
 
 // PNG renders the sprite into a square image. Scaling uses integer factors and

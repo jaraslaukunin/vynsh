@@ -3,7 +3,6 @@ package trash
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -199,15 +198,6 @@ func rewriteManifest(restored []Record) {
 	}
 	f.Close()
 	_ = os.Rename(tmp, p)
-}
-
-// Describe renders a record for a list view.
-func (r Record) Describe() string {
-	kind := "file"
-	if r.IsDir {
-		kind = "dir"
-	}
-	return fmt.Sprintf("%s (%s, %s)", shortenHome(r.Original), kind, r.Time.Format("2006-01-02 15:04"))
 }
 
 func shortenHome(p string) string {

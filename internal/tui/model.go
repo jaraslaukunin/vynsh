@@ -101,15 +101,16 @@ type model struct {
 	busy    string
 	version string
 
-	prompt        *promptState
-	beetleX       int
-	beetleDir     int
-	beetleWalking bool
-	happyUntil    int
-	logs          []logLine
-	quitting      bool
-	err           error
-	events        chan tea.Msg
+	prompt      *promptState
+	beetleX     int
+	beetleShift int // columns the beetle has walked away from its corner (<= 0)
+	beetleDir   int // -1 walking left, +1 walking right
+	beetleWalk  int // ticks left in the current stroll
+	happyUntil  int
+	logs        []logLine
+	quitting    bool
+	err         error
+	events      chan tea.Msg
 }
 
 type tickMsg time.Time
@@ -427,6 +428,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tickMsg:
 		m.frame++
+		m.stepBeetle()
 		return m, m.tick()
 
 	case snapMsg:
@@ -777,7 +779,7 @@ func (m *model) speech() string {
 }
 
 func (m *model) footerView(width int) string {
-	keys := "1-4 views · tab/←→ switch · r refresh · s scan · q quit"
+	keys := "1-5 views · tab/←→ switch · r refresh · s scan · q quit"
 	switch m.tab {
 	case tabCleanup:
 		keys = "↑↓ move · space toggle · a all safe · n none · enter apply · r re-measure · q quit"
@@ -853,7 +855,36 @@ func shorten(p string) string {
 	return p
 }
 
-// celebrate makes the beetle smile for a couple of seconds.
+// stepBeetle lets the mascot stroll a few columns along the input box now and
+// then. The range is deliberately short: the beetle stays in its corner instead
+// of wandering across the screen.
+func (m *model) stepBeetle() {
+	const leftmost = -4
+	if m.beetleDir == 0 {
+		m.beetleDir = -1
+	}
+	if m.beetleWalk > 0 {
+		if m.frame%3 != 0 {
+			return
+		}
+		m.beetleWalk--
+		m.beetleShift += m.beetleDir
+		switch {
+		case m.beetleShift <= leftmost:
+			m.beetleShift = leftmost
+			m.beetleDir = 1
+		case m.beetleShift >= 0:
+			m.beetleShift = 0
+			m.beetleDir = -1
+		}
+		return
+	}
+	if !m.isBusy() && m.frame%80 == 0 {
+		m.beetleWalk = 12
+	}
+}
+
+// celebrate makes the beetle hop twice after a successful cleanup.
 func (m *model) celebrate() {
 	m.happyUntil = m.frame + 14
 }

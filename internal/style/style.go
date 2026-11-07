@@ -15,16 +15,14 @@ import (
 )
 
 const (
-	reset   = "\x1b[0m"
-	bold    = "\x1b[1m"
-	dim     = "\x1b[2m"
-	red     = "\x1b[31m"
-	green   = "\x1b[32m"
-	yellow  = "\x1b[33m"
-	blue    = "\x1b[34m"
-	magenta = "\x1b[35m"
-	cyan    = "\x1b[36m"
-	white   = "\x1b[97m"
+	reset  = "\x1b[0m"
+	bold   = "\x1b[1m"
+	dim    = "\x1b[2m"
+	red    = "\x1b[31m"
+	green  = "\x1b[32m"
+	yellow = "\x1b[33m"
+	cyan   = "\x1b[36m"
+	white  = "\x1b[97m"
 )
 
 // Theme applies ANSI colours when enabled and is a no-op otherwise.
@@ -55,21 +53,18 @@ func (t *Theme) wrap(code, s string) string {
 	return code + s + reset
 }
 
-func (t *Theme) Bold(s string) string    { return t.wrap(bold, s) }
-func (t *Theme) Dim(s string) string     { return t.wrap(dim, s) }
-func (t *Theme) Red(s string) string     { return t.wrap(red, s) }
-func (t *Theme) Green(s string) string   { return t.wrap(green, s) }
-func (t *Theme) Yellow(s string) string  { return t.wrap(yellow, s) }
-func (t *Theme) Blue(s string) string    { return t.wrap(blue, s) }
-func (t *Theme) Magenta(s string) string { return t.wrap(magenta, s) }
-func (t *Theme) Cyan(s string) string    { return t.wrap(cyan, s) }
-func (t *Theme) White(s string) string   { return t.wrap(white, s) }
-
-// Title renders a section heading.
-func (t *Theme) Title(s string) string { return t.wrap(bold+cyan, s) }
+func (t *Theme) Bold(s string) string   { return t.wrap(bold, s) }
+func (t *Theme) Dim(s string) string    { return t.wrap(dim, s) }
+func (t *Theme) Red(s string) string    { return t.wrap(red, s) }
+func (t *Theme) Green(s string) string  { return t.wrap(green, s) }
+func (t *Theme) Yellow(s string) string { return t.wrap(yellow, s) }
+func (t *Theme) Cyan(s string) string   { return t.wrap(cyan, s) }
 
 // Header renders a table header row.
 func (t *Theme) Header(s string) string { return t.wrap(bold+white, s) }
+
+// Title renders a section heading.
+func (t *Theme) Title(s string) string { return t.wrap(bold+cyan, s) }
 
 // Width returns the printable width of s, ignoring ANSI escapes.
 func Width(s string) int {

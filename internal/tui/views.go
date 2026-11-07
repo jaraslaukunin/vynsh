@@ -20,9 +20,6 @@ func (m *model) contentWidth() int {
 	if w < 40 {
 		w = 100
 	}
-	if w >= 88 {
-		return w - 35
-	}
 	return w - 2
 }
 
@@ -100,14 +97,14 @@ func (m *model) overviewView() string {
 	b.WriteString(lipgloss.JoinHorizontal(lipgloss.Top, cpuBox, memBox))
 	b.WriteString("\n")
 
-	fullW := cw*2 + 4
+	fullW := cw*2 + 2
 	if len(s.Disks) > 0 {
 		rows := make([]string, 0, len(s.Disks))
 		for _, d := range s.Disks {
 			rows = append(rows, clamp(fmt.Sprintf("%s %s %s %s",
 				labelStyle.Render(padRight(d.Mountpoint, 18)), bar(d.Percent, 18),
 				valueStyle.Render(units.HumanBytes(int64(d.Free))),
-				dimStyle.Render("free of "+units.HumanBytes(int64(d.Total)))), fullW))
+				dimStyle.Render("free of "+units.HumanBytes(int64(d.Total)))), fullW-2))
 		}
 		b.WriteString(boxStyle.Width(fullW).Render(titleStyle.Render("Disks") + "\n" + strings.Join(rows, "\n")))
 		b.WriteString("\n")

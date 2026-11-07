@@ -26,11 +26,8 @@ var (
 	dimStyle    = lipgloss.NewStyle().Foreground(colDim)
 	textStyle   = lipgloss.NewStyle().Foreground(colText)
 
-	selectedRow = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("231")).Background(lipgloss.Color("57"))
-	boxStyle    = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).
+	boxStyle = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).
 			BorderForeground(colDim).Padding(0, 1)
-	panelStyle = lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).
-			BorderForeground(colAccent).Padding(0, 1)
 	activeTab   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("231")).Background(colAccent).Padding(0, 1)
 	inactiveTab = lipgloss.NewStyle().Foreground(colDim).Padding(0, 1)
 	checkboxOn  = lipgloss.NewStyle().Foreground(colGood).Bold(true)

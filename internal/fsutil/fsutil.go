@@ -3,7 +3,6 @@
 package fsutil
 
 import (
-	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -188,9 +187,6 @@ func IsUnder(path, base string) bool {
 	}
 	return rel == "." || (!strings.HasPrefix(rel, ".."+string(filepath.Separator)) && rel != "..")
 }
-
-// ErrUnsupported marks an operation that this platform does not implement.
-var ErrUnsupported = errors.New("operation not supported on this platform")
 
 // extraProtected holds user-configured paths that must never be deleted.
 var extraProtected []string

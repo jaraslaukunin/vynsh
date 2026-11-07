@@ -32,9 +32,6 @@ type Filter struct {
 	MaxDepth      int // 0 = unlimited
 }
 
-// DefaultFilter returns a filter that selects every regular file.
-func DefaultFilter() Filter { return Filter{Files: true} }
-
 // Item is a single planned deletion.
 type Item struct {
 	Path    string    `json:"path"`

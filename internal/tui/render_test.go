@@ -171,7 +171,7 @@ func TestMascotFrames(t *testing.T) {
 		m.frame = i
 		m.height = 34
 		out := m.withBeetle("BOX", 110)
-		if !strings.Contains(out, "▀") && !strings.Contains(out, "▄") {
+		if !strings.Contains(out, "█") {
 			t.Errorf("frame %d has no beetle pixels:\n%s", i, out)
 		}
 		if !strings.Contains(out, "BOX") {
@@ -199,11 +199,39 @@ func TestBeetleHops(t *testing.T) {
 	if lifted == 0 || grounded == 0 {
 		t.Errorf("beetle never changed pose: lifted=%d grounded=%d", lifted, grounded)
 	}
-	if !(beetleState{frame: 8}).hopping() {
-		t.Error("frame 8 should be airborne")
+	if !(beetleState{frame: 6}).hopping() {
+		t.Error("frame 6 should be airborne")
 	}
 	if (beetleState{frame: 20}).hopping() {
 		t.Error("frame 20 should be on the ground")
+	}
+	// Every animation state must produce a distinct sprite at some point.
+	seen := map[string]bool{}
+	for i := 0; i < 200; i++ {
+		st := beetleState{frame: i}
+		seen[spriteName(st.sprite())] = true
+	}
+	for _, want := range []string{"base", "hop", "blink", "wink", "antennae"} {
+		if !seen[want] {
+			t.Errorf("idle animation never showed %q (seen: %v)", want, seen)
+		}
+	}
+	busy := map[string]bool{}
+	for i := 0; i < 20; i++ {
+		busy[spriteName(beetleState{frame: i, busy: true}.sprite())] = true
+	}
+	if !busy["type1"] && !busy["type2"] {
+		t.Errorf("busy state does not animate the feet: %v", busy)
+	}
+	// Celebration is a double hop rather than a squint, so the eyes stay solid.
+	hops := 0
+	for i := 0; i < 24; i++ {
+		if (beetleState{frame: i, happy: true}).hopping() {
+			hops++
+		}
+	}
+	if hops < 4 {
+		t.Errorf("celebration should hop twice, saw %d airborne frames", hops)
 	}
 }
 
@@ -223,5 +251,66 @@ func TestNarrowTerminal(t *testing.T) {
 					tabNames[tab], lipgloss.Width(line), m.width, line)
 			}
 		}
+	}
+}
+
+// spriteName finds the registry name of a sprite for readable assertions.
+func spriteName(s logo.Sprite) string {
+	for name, candidate := range logo.All() {
+		if len(candidate) != len(s) {
+			continue
+		}
+		same := true
+		for i := range candidate {
+			if candidate[i] != s[i] {
+				same = false
+				break
+			}
+		}
+		if same {
+			return name
+		}
+	}
+	return "custom"
+}
+
+func TestBeetleSitsInTheRightCorner(t *testing.T) {
+	m := sampleModel()
+	m.height = 34
+	width := 110
+	out := m.withBeetle("BOX", width)
+	var artLine string
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, "█") {
+			artLine = line
+			break
+		}
+	}
+	if artLine == "" {
+		t.Fatal("no beetle art found")
+	}
+	start := lipgloss.Width(artLine) - lipgloss.Width(strings.TrimLeft(artLine, " "))
+	if start < width/2 {
+		t.Errorf("beetle starts at column %d of %d: it should sit on the right", start, width)
+	}
+	if end := start + logo.Base.Width()*2; end > width-2 {
+		t.Errorf("beetle ends at %d, past the box edge %d", end, width-2)
+	}
+}
+
+func TestBeetleWalksOnlyALittle(t *testing.T) {
+	m := sampleModel()
+	m.height = 34
+	seen := map[int]bool{}
+	for i := 0; i < 200; i++ {
+		m.frame = i
+		m.stepBeetle()
+		seen[m.beetleShift] = true
+		if m.beetleShift > 0 || m.beetleShift < -4 {
+			t.Fatalf("beetle wandered to %d columns", m.beetleShift)
+		}
+	}
+	if len(seen) < 2 {
+		t.Errorf("beetle never moved: %v", seen)
 	}
 }
