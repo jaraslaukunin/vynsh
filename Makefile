@@ -18,7 +18,7 @@ all: build
 ## build: build the binary for the current platform into ./bin
 build:
 	@mkdir -p bin
-	go build -trimpath -ldflags "$(LDFLAGS)" -o bin/$(BINARY) ./cmd/vynsh
+	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/$(BINARY) ./cmd/vynsh
 	@echo "built bin/$(BINARY) ($(VERSION))"
 
 ## install: install into GOBIN
