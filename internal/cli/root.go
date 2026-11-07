@@ -49,7 +49,9 @@ Typical first run:
   vynsh report                 # what is big, what is junk, how much can be freed
   vynsh scan ~/Downloads       # where the space went
   vynsh clean                  # measure junk, then confirm removal
-  vynsh usage                  # CPU / memory / disk / network live snapshot`),
+  vynsh usage                  # CPU / memory / disk / network live snapshot
+  vynsh tui                    # interactive dashboard with the mascot
+  vynsh snapshot save ~        # remember disk usage, diff it later`),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -84,13 +86,13 @@ Typical first run:
 	)
 
 	for _, c := range []*cobra.Command{
-		newScanCmd(), newUsageCmd(), newDupesCmd(), newReportCmd(),
+		newScanCmd(), newUsageCmd(), newDupesCmd(), newReportCmd(), newSnapshotCmd(),
 	} {
 		c.GroupID = "analyse"
 		root.AddCommand(c)
 	}
 	for _, c := range []*cobra.Command{
-		newCleanCmd(), newTrashCmd(), newRmCmd(),
+		newCleanCmd(), newTrashCmd(), newRmCmd(), newDockerCmd(),
 	} {
 		c.GroupID = "cleanup"
 		root.AddCommand(c)

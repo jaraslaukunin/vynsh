@@ -1,9 +1,6 @@
-//go:build !darwin && !windows
+//go:build !darwin && !windows && !linux
 
 package trash
-
-// Locations is unused on platforms without a trash implementation.
-func locations() []string { return nil }
 
 // Inspect returns ErrNotSupported.
 func Inspect() (*Report, error) { return nil, ErrNotSupported }

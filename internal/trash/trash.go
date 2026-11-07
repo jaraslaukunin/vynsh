@@ -4,7 +4,9 @@ package trash
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -172,4 +174,13 @@ func sizeOf(p string) int64 {
 		return fsutil.DirSize(p).Bytes
 	}
 	return st.Size()
+}
+
+// withHint adds the usual macOS cause to permission errors, which are almost
+// always TCC (Privacy & Security) rather than a broken path.
+func withHint(err error) error {
+	if errors.Is(err, fs.ErrPermission) {
+		return fmt.Errorf("%w — grant your terminal “Full Disk Access” in System Settings → Privacy & Security", err)
+	}
+	return err
 }

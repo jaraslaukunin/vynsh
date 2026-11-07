@@ -132,6 +132,10 @@ func Move(paths []string, dryRun bool) (*MoveReport, error) {
 			rep.Moved = append(rep.Moved, res)
 			continue
 		}
+		// The shell hides where the item really went, and Windows keeps its own
+		// restore metadata, so the record stays informational (empty Trashed
+		// means "not restorable through vynsh").
+		appendRecord(Record{Original: abs, Bytes: res.Bytes, IsDir: fsutil.IsDir(abs)})
 		res.Dest = "Recycle Bin"
 		rep.Moved = append(rep.Moved, res)
 		rep.Bytes += res.Bytes

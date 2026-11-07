@@ -3,9 +3,7 @@
 package trash
 
 import (
-	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -100,12 +98,14 @@ func Move(paths []string, dryRun bool) (*MoveReport, error) {
 			rep.Bytes += res.Bytes
 			continue
 		}
+		wasDir := fsutil.IsDir(abs)
 		dest, err := moveInto(abs, dir)
 		if err != nil {
 			res.Err = withHint(err).Error()
 			rep.Moved = append(rep.Moved, res)
 			continue
 		}
+		appendRecord(Record{Original: abs, Trashed: dest, Bytes: res.Bytes, IsDir: wasDir})
 		res.Dest = dest
 		rep.Moved = append(rep.Moved, res)
 		rep.Bytes += res.Bytes
@@ -144,12 +144,3 @@ func trashDirFor(p string) string {
 
 // Supported reports whether a trash facility exists.
 func Supported() bool { return true }
-
-// withHint adds the usual macOS cause to permission errors, which are almost
-// always TCC (Privacy & Security) rather than a broken path.
-func withHint(err error) error {
-	if errors.Is(err, fs.ErrPermission) {
-		return fmt.Errorf("%w — grant your terminal “Full Disk Access” in System Settings → Privacy & Security", err)
-	}
-	return err
-}

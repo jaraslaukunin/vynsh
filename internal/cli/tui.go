@@ -15,14 +15,23 @@ func newTUICmd() *cobra.Command {
 		Use:     "tui",
 		Aliases: []string{"dash", "dashboard"},
 		Short:   "Open the interactive dashboard",
-		Long: `Open a live dashboard in the terminal.
+		Long: `Open a live dashboard in the terminal: resource overview, an interactive
+cleanup picker, disk analysis and the trash — all in one screen.
 
-Views:
-  1 Overview   CPU, memory, disks, network and the busiest processes
-  2 Disk usage biggest directories of your home folder (press s to scan)
-  3 Junk       reclaimable caches and the size of the trash
+Views
+  1 Overview   CPU, memory, disks, network, busiest processes
+  2 Cleanup    tick rules with space, see what each one frees, then apply
+  3 Disk       scan your home folder and save a snapshot for later comparison
+  4 Trash      what is in the bin, restore items vynsh moved there, empty it
 
-Keys: 1/2/3 or tab switch views · s scan home · r refresh · q quit`,
+Keys
+  1-4 / tab      switch views (←/→ work too)
+  ↑↓ space       move and tick cleanup rules
+  a / n          select all safe rules / select none
+  enter          apply the selection or empty the trash (asks first)
+  u              restore items from the trash
+  s / v          scan the home folder / save the scan as a snapshot
+  r              refresh everything · q quit`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if g.json {
