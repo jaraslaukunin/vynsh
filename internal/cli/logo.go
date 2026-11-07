@@ -117,7 +117,7 @@ Examples:
 	cmd.Flags().StringVar(&bg, "bg", "#0d0b1a", "background colour when --bg is used instead of transparency")
 	cmd.Flags().BoolVar(&transparent, "transparent", true, "transparent background")
 	cmd.Flags().BoolVar(&ascii, "ascii", false, "print the sprite in the terminal instead of writing a PNG")
-	cmd.Flags().StringVar(&variant, "variant", "base", "which pose to export: base, hop, blink, wink, reference")
+	cmd.Flags().StringVar(&variant, "variant", "base", "which pose to export: base, hop, blink, wink, antennae, type1")
 	cmd.Flags().StringVar(&format, "format", "", "png or svg (inferred from the file extension)")
 	return cmd
 }

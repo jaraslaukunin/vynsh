@@ -48,22 +48,22 @@ var Palette = map[byte]RGBA{
 	'L': {0x4C, 0x1D, 0x95, 0xFF}, // antennae and legs: violet-900
 }
 
-// The beetle. The body tapers top and bottom, and the eyes are square dots
-// rather than long bars: at small sizes (README, terminal) the shape reads as a
-// face instead of a striped plate.
+// The beetle. The art is the reference the mascot was drawn from: two antennae,
+// a wide body, two eyes, a darker band along the bottom of the shell and three
+// legs. Keep the rows as they are: the terminal renderer draws them one to one.
 //
 //	L.......L     antenna tips
 //	.L.....L.     antennae
-//	..SSSSS..     top of the shell
-//	.SESSSES.     eyes
-//	..HHHHH..     shell shade
+//	.SSSSSSS.     body
+//	.SEESEES.     eyes
+//	.SHHHHHH.     shell shade
 //	..L.L.L..     legs
 var Base = Sprite{
 	"L.......L",
 	".L.....L.",
-	"..SSSSS..",
-	".SESSSES.",
-	"..HHHHH..",
+	".SSSSSSS.",
+	".SEESEES.",
+	".SHHHHHH.",
 	"..L.L.L..",
 }
 
@@ -71,9 +71,9 @@ var Base = Sprite{
 var Blink = Sprite{
 	"L.......L",
 	".L.....L.",
-	"..SSSSS..",
 	".SSSSSSS.",
-	"..HHHHH..",
+	".SSSSSSS.",
+	".SHHHHHH.",
 	"..L.L.L..",
 }
 
@@ -81,9 +81,9 @@ var Blink = Sprite{
 var Wink = Sprite{
 	"L.......L",
 	".L.....L.",
-	"..SSSSS..",
-	".SESSSSS.",
-	"..HHHHH..",
+	".SSSSSSS.",
+	".SEESSSS.",
+	".SHHHHHH.",
 	"..L.L.L..",
 }
 
@@ -91,18 +91,18 @@ var Wink = Sprite{
 var AntennaeUp = Sprite{
 	"L.......L",
 	"..L...L..",
-	"..SSSSS..",
-	".SESSSES.",
-	"..HHHHH..",
+	".SSSSSSS.",
+	".SEESEES.",
+	".SHHHHHH.",
 	"..L.L.L..",
 }
 
 var AntennaeDown = Sprite{
 	".L.....L.",
 	"L.......L",
-	"..SSSSS..",
-	".SESSSES.",
-	"..HHHHH..",
+	".SSSSSSS.",
+	".SEESEES.",
+	".SHHHHHH.",
 	"..L.L.L..",
 }
 
@@ -110,9 +110,9 @@ var AntennaeDown = Sprite{
 var Hop = Sprite{
 	"L.......L",
 	".L.....L.",
-	"..SSSSS..",
-	".SESSSES.",
-	"..HHHHH..",
+	".SSSSSSS.",
+	".SEESEES.",
+	".SHHHHHH.",
 	"..L...L..",
 }
 
@@ -120,37 +120,19 @@ var Hop = Sprite{
 var Type1 = Sprite{
 	"L.......L",
 	".L.....L.",
-	"..SSSSS..",
-	".SESSSES.",
-	"..HHHHH..",
+	".SSSSSSS.",
+	".SEESEES.",
+	".SHHHHHH.",
 	".L.L.L.L.",
 }
 
 var Type2 = Sprite{
 	"L.......L",
 	".L.....L.",
-	"..SSSSS..",
-	".SESSSES.",
-	"..HHHHH..",
-	"..L...L..",
-}
-
-// Reference is the original artwork the mascot was drawn from: a flat shell
-// with wide eyes. It is kept as a selectable variant for anyone who prefers it.
-//
-//	L.......L
-//	.L.....L.
-//	.SSSSSSS.
-//	.SEESEES.
-//	.SHHHHHH.
-//	..L.L.L..
-var Reference = Sprite{
-	"L.......L",
-	".L.....L.",
 	".SSSSSSS.",
 	".SEESEES.",
 	".SHHHHHH.",
-	"..L.L.L..",
+	"..L...L..",
 }
 
 // All returns every sprite variant by name.
@@ -164,7 +146,6 @@ func All() map[string]Sprite {
 		"type1":     Type1,
 		"type2":     Type2,
 		"antennae2": AntennaeDown,
-		"reference": Reference,
 	}
 }
 

@@ -47,13 +47,16 @@ func beetleArt(s logo.Sprite) []string {
 	return lines
 }
 
-// beetlePixel draws one sprite pixel as two blocks of its colour.
+// beetlePixel draws one sprite pixel as two blocks of its colour. The cell
+// background is painted as well: terminals add a little space between lines, and
+// a background fill keeps the beetle looking like one solid shape instead of a
+// stack of stripes.
 func beetlePixel(key byte) string {
 	c, ok := beetleColors[key]
 	if !ok {
 		return "  "
 	}
-	return lipgloss.NewStyle().Foreground(c).Render("██")
+	return lipgloss.NewStyle().Foreground(c).Background(c).Render("██")
 }
 
 // beetleState is everything needed to draw one frame of the beetle.
