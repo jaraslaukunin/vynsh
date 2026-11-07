@@ -34,11 +34,30 @@ if (-not $InstallDir) {
 }
 
 # ---- resolve the release -------------------------------------------------
+# Archives are named after the version, so "latest" is resolved to a tag first.
+# GitHub's /releases/latest skips pre-releases, hence the list fallback.
+$api = "https://api.github.com/repos/$Repo/releases"
+
 if ($Version -eq "latest") {
-    $base = "https://github.com/$Repo/releases/latest/download"
+    $release = $null
+    try { $release = Invoke-RestMethod -Uri "$api/latest" -UseBasicParsing } catch { $release = $null }
+    if (-not $release -or -not $release.tag_name) {
+        try {
+            $all = Invoke-RestMethod -Uri "$api?per_page=20" -UseBasicParsing
+            $release = $all | Where-Object { -not $_.draft } | Select-Object -First 1
+        } catch {
+            Fail "could not find a release in $Repo`n  * check your network, or pick a version: -Version 0.3.0-beta`n  * releases: https://github.com/$Repo/releases"
+        }
+    }
+    if (-not $release -or -not $release.tag_name) {
+        Fail "could not find a release in $Repo`n  * releases: https://github.com/$Repo/releases"
+    }
+    $tag = $release.tag_name
+    $Version = $tag -replace '^v', ''
 } else {
-    $base = "https://github.com/$Repo/releases/download/v$Version"
+    $tag = "v$Version"
 }
+$base = "https://github.com/$Repo/releases/download/$tag"
 $asset = "vynsh_${Version}_windows_${arch}.zip"
 
 $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("vynsh-" + [guid]::NewGuid().ToString("N"))

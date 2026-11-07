@@ -47,10 +47,31 @@ else
 fi
 
 # ---- resolve the release -------------------------------------------------
+# Release archives are named after the version (vynsh_0.3.0-beta_darwin_arm64.tar.gz),
+# so "latest" has to be resolved to a concrete tag first. GitHub's
+# /releases/latest skips pre-releases, so fall back to the release list.
+api="https://api.github.com/repos/$REPO/releases"
+
+resolve_tag() {
+	json=$(fetch "$api/latest" 2>/dev/null || true)
+	tag=$(printf '%s' "$json" | grep -o '"tag_name": *"[^"]*"' | head -n1 | sed 's/.*"\([^"]*\)"$/\1/')
+	if [ -z "$tag" ]; then
+		json=$(fetch "$api?per_page=20" 2>/dev/null || true)
+		# The list is newest first and may contain drafts; take the first tag.
+		tag=$(printf '%s' "$json" | grep -o '"tag_name": *"[^"]*"' | head -n1 | sed 's/.*"\([^"]*\)"$/\1/')
+	fi
+	printf '%s' "$tag"
+}
+
 if [ -n "${VYNSH_BASE_URL:-}" ]; then
 	base="$VYNSH_BASE_URL"
 elif [ "$VERSION" = "latest" ]; then
-	base="https://github.com/$REPO/releases/latest/download"
+	tag=$(resolve_tag)
+	[ -n "$tag" ] || fail "could not find a release in $REPO
+  * check your network, or pick a version: VYNSH_VERSION=0.3.0-beta sh install.sh
+  * releases: https://github.com/$REPO/releases"
+	VERSION=${tag#v}
+	base="https://github.com/$REPO/releases/download/$tag"
 else
 	base="https://github.com/$REPO/releases/download/v$VERSION"
 fi
